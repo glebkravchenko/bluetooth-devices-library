@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.ble
+package com.test.emmacarebluetoothdevices.services
 
 import android.app.Service
 import android.bluetooth.*
@@ -7,15 +7,16 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
-import com.test.emmacarebluetoothdevices.data.Const
+import com.test.emmacarebluetoothdevices.etc.Const
 
-class BluetoothLeService : Service() {
+class BluetoothService : Service() {
 
     private var bluetoothManager: BluetoothManager? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothDeviceAddress: String? = null
     private var bluetoothGatt: BluetoothGatt? = null
-    private var connectionState = STATE_DISCONNECTED
+    private var connectionState =
+        STATE_DISCONNECTED
     private val buf = ByteArray(10)
     private var bufIndex = 0
 
@@ -23,15 +24,19 @@ class BluetoothLeService : Service() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val intentAction: String
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED
-                connectionState = STATE_CONNECTED
+                intentAction =
+                    ACTION_GATT_CONNECTED
+                connectionState =
+                    STATE_CONNECTED
                 broadcastUpdate(intentAction)
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" + bluetoothGatt!!.discoverServices())
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED
-                connectionState = STATE_DISCONNECTED
+                intentAction =
+                    ACTION_GATT_DISCONNECTED
+                connectionState =
+                    STATE_DISCONNECTED
                 Log.i(TAG, "Disconnected from GATT server.")
                 broadcastUpdate(intentAction)
             }
@@ -84,8 +89,8 @@ class BluetoothLeService : Service() {
     }
 
     inner class LocalBinder : Binder() {
-        val service: BluetoothLeService
-            get() = this@BluetoothLeService
+        val service: BluetoothService
+            get() = this@BluetoothService
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -126,7 +131,8 @@ class BluetoothLeService : Service() {
         if (bluetoothDeviceAddress != null && address == bluetoothDeviceAddress && bluetoothGatt != null) {
             Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.")
             return if (bluetoothGatt!!.connect()) {
-                connectionState = STATE_CONNECTING
+                connectionState =
+                    STATE_CONNECTING
                 true
             } else {
                 false
@@ -141,7 +147,8 @@ class BluetoothLeService : Service() {
         bluetoothGatt = device.connectGatt(this, false, mGattCallback)
         Log.d(TAG, "Trying to create a new connection.")
         bluetoothDeviceAddress = address
-        connectionState = STATE_CONNECTING
+        connectionState =
+            STATE_CONNECTING
         return true
     }
 
@@ -218,7 +225,7 @@ class BluetoothLeService : Service() {
     }
 
     companion object {
-        private val TAG = BluetoothLeService::class.java.simpleName
+        private val TAG = BluetoothService::class.java.simpleName
         private const val STATE_DISCONNECTED = 0
         private const val STATE_CONNECTING = 1
         private const val STATE_CONNECTED = 2

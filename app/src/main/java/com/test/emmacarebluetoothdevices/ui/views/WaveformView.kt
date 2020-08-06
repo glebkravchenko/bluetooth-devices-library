@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.views
+package com.test.emmacarebluetoothdevices.ui.views
 
 import android.content.Context
 import android.graphics.*

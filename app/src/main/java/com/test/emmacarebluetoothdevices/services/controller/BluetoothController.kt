@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.ble
+package com.test.emmacarebluetoothdevices.services.controller
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -7,13 +7,14 @@ import android.bluetooth.BluetoothGattService
 import android.content.*
 import android.os.IBinder
 import android.util.Log
-import com.test.emmacarebluetoothdevices.ble.BluetoothLeService.LocalBinder
-import com.test.emmacarebluetoothdevices.data.Const
+import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
+import com.test.emmacarebluetoothdevices.etc.Const
+import com.test.emmacarebluetoothdevices.services.BluetoothService
 
-class BleController private constructor(private val stateListener: StateListener) {
+class BluetoothController private constructor(private val stateListener: StateListener) {
 
     private val btAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
-    private var bluetoothLeService: BluetoothLeService? = null
+    private var bluetoothService: BluetoothService? = null
     private var receiveData: BluetoothGattCharacteristic? = null
     private var modifyName: BluetoothGattCharacteristic? = null
     var isConnected = false
@@ -36,14 +37,14 @@ class BleController private constructor(private val stateListener: StateListener
      * @param device
      */
     fun connect(device: BluetoothDevice) {
-        bluetoothLeService!!.connect(device.address)
+        bluetoothService!!.connect(device.address)
     }
 
     /**
      * Disconnect the bluetooth
      */
     fun disconnect() {
-        bluetoothLeService!!.disconnect()
+        bluetoothService!!.disconnect()
     }
 
     /**
@@ -72,19 +73,19 @@ class BleController private constructor(private val stateListener: StateListener
             componentName: ComponentName,
             service: IBinder
         ) {
-            bluetoothLeService = (service as LocalBinder).service
-            if (!bluetoothLeService!!.initialize()) {
+            bluetoothService = (service as LocalBinder).service
+            if (!bluetoothService!!.initialize()) {
                 Log.e(TAG, "Unable to initialize Bluetooth")
             }
         }
 
         override fun onServiceDisconnected(componentName: ComponentName) {
-            bluetoothLeService = null
+            bluetoothService = null
         }
     }
 
     fun bindService(context: Context) {
-        val gattServiceIntent = Intent(context, BluetoothLeService::class.java)
+        val gattServiceIntent = Intent(context, BluetoothService::class.java)
         context.bindService(
             gattServiceIntent,
             mServiceConnection,
@@ -100,26 +101,26 @@ class BleController private constructor(private val stateListener: StateListener
 
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                BluetoothLeService.ACTION_GATT_CONNECTED -> {
+                BluetoothService.ACTION_GATT_CONNECTED -> {
                     stateListener.onConnected()
                     isConnected = true
                 }
-                BluetoothLeService.ACTION_GATT_DISCONNECTED -> {
+                BluetoothService.ACTION_GATT_DISCONNECTED -> {
                     stateListener.onDisconnected()
                     modifyName = null
                     receiveData = null
                     isConnected = false
                 }
-                BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED -> {
+                BluetoothService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    bluetoothLeService!!.setCharacteristicNotification(receiveData!!, true)
+                    bluetoothService!!.setCharacteristicNotification(receiveData!!, true)
                 }
-                BluetoothLeService.ACTION_DATA_AVAILABLE -> {
-                    Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothLeService.EXTRA_DATA))
+                BluetoothService.ACTION_DATA_AVAILABLE -> {
+                    Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothService.EXTRA_DATA))
                 }
-                BluetoothLeService.ACTION_SPO2_DATA_AVAILABLE -> {
-                    stateListener.onReceiveData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA))
+                BluetoothService.ACTION_SPO2_DATA_AVAILABLE -> {
+                    stateListener.onReceiveData(intent.getByteArrayExtra(BluetoothService.EXTRA_DATA))
                 }
             }
         }
@@ -148,7 +149,7 @@ class BleController private constructor(private val stateListener: StateListener
     }
 
     fun initCharacteristic() {
-        val services = bluetoothLeService!!.supportedGattServices
+        val services = bluetoothService!!.supportedGattServices
         var mDataService: BluetoothGattService? = null
         if (services == null) return
         for (service in services) {
@@ -169,7 +170,9 @@ class BleController private constructor(private val stateListener: StateListener
     }
 
     fun registerBtReceiver(context: Context) {
-        context.registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter())
+        context.registerReceiver(gattUpdateReceiver,
+            makeGattUpdateIntentFilter()
+        )
     }
 
     fun unregisterBtReceiver(context: Context) {
@@ -206,7 +209,7 @@ class BleController private constructor(private val stateListener: StateListener
     }
 
     companion object {
-        private var mBleController: BleController? = null
+        private var mBluetoothController: BluetoothController? = null
         private val TAG = this.javaClass.name
 
         /**
@@ -215,20 +218,23 @@ class BleController private constructor(private val stateListener: StateListener
          * @return
          */
         @JvmStatic
-        fun getDefaultBleController(stateListener: StateListener): BleController? {
-            if (mBleController == null) {
-                mBleController = BleController(stateListener)
+        fun getDefaultBleController(stateListener: StateListener): BluetoothController? {
+            if (mBluetoothController == null) {
+                mBluetoothController =
+                    BluetoothController(
+                        stateListener
+                    )
             }
-            return mBleController
+            return mBluetoothController
         }
 
         private fun makeGattUpdateIntentFilter(): IntentFilter {
             val intentFilter = IntentFilter()
-            intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED)
-            intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED)
-            intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED)
-            intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE)
-            intentFilter.addAction(BluetoothLeService.ACTION_SPO2_DATA_AVAILABLE)
+            intentFilter.addAction(BluetoothService.ACTION_GATT_CONNECTED)
+            intentFilter.addAction(BluetoothService.ACTION_GATT_DISCONNECTED)
+            intentFilter.addAction(BluetoothService.ACTION_GATT_SERVICES_DISCOVERED)
+            intentFilter.addAction(BluetoothService.ACTION_DATA_AVAILABLE)
+            intentFilter.addAction(BluetoothService.ACTION_SPO2_DATA_AVAILABLE)
             return intentFilter
         }
     }

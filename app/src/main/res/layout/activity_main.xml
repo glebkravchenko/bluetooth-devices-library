@@ -36,7 +36,7 @@
         android:textColor="@android:color/black"
         android:textSize="24sp" />
 
-    <com.test.emmacarebluetoothdevices.views.WaveformView
+    <com.test.emmacarebluetoothdevices.ui.views.WaveformView
         android:id="@+id/wfvPleth"
         android:layout_width="match_parent"
         android:layout_height="200dp"

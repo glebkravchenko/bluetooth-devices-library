@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices
+package com.test.emmacarebluetoothdevices.ui
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
@@ -6,21 +6,21 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.test.emmacarebluetoothdevices.ble.BleController
-import com.test.emmacarebluetoothdevices.ble.BleController.Companion.getDefaultBleController
-import com.test.emmacarebluetoothdevices.ble.BleController.StateListener
-import com.test.emmacarebluetoothdevices.data.DataParser
-import com.test.emmacarebluetoothdevices.data.DataParser.OxiParams
-import com.test.emmacarebluetoothdevices.data.DataParser.PackageReceivedListener
-import com.test.emmacarebluetoothdevices.dialog.DeviceListAdapter
-import com.test.emmacarebluetoothdevices.dialog.SearchDevicesDialog
+import com.test.emmacarebluetoothdevices.R
+import com.test.emmacarebluetoothdevices.etc.DataParser
+import com.test.emmacarebluetoothdevices.etc.DataParser.OxiParams
+import com.test.emmacarebluetoothdevices.etc.DataParser.PackageReceivedListener
+import com.test.emmacarebluetoothdevices.services.controller.BluetoothController
+import com.test.emmacarebluetoothdevices.services.controller.BluetoothController.Companion.getDefaultBleController
+import com.test.emmacarebluetoothdevices.ui.adapter.DeviceListAdapter
+import com.test.emmacarebluetoothdevices.ui.dialog.SearchDevicesDialog
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
-class MainActivity : AppCompatActivity(), StateListener {
+class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
 
     private var dataParser: DataParser? = null
-    private var bleControl: BleController? = null
+    private var bluetoothControl: BluetoothController? = null
     private var searchDialog: SearchDevicesDialog? = null
     private var btDevicesAdapter: DeviceListAdapter? = null
     private val btDevices = ArrayList<BluetoothDevice?>()
@@ -39,13 +39,18 @@ class MainActivity : AppCompatActivity(), StateListener {
         })
 
         dataParser!!.start()
-        bleControl = getDefaultBleController(this)
-        bleControl!!.bindService(this)
-        btDevicesAdapter = DeviceListAdapter(this, R.layout.item_devices, btDevices)
+        bluetoothControl = getDefaultBleController(this)
+        bluetoothControl!!.bindService(this)
+        btDevicesAdapter =
+            DeviceListAdapter(
+                this,
+                R.layout.item_devices,
+                btDevices
+            )
         searchDialog = object : SearchDevicesDialog(this, btDevicesAdapter) {
             override fun onClickDeviceItem(pos: Int) {
                 val device = btDevices[pos]
-                bleControl?.connect(device!!)
+                bluetoothControl?.connect(device!!)
                 dismiss()
             }
         }
@@ -53,10 +58,10 @@ class MainActivity : AppCompatActivity(), StateListener {
 
     fun onClick(v: View) {
         when (v.id) {
-            R.id.btnSearch -> if (!bleControl!!.isConnected) {
-                bleControl?.enableBtAdapter(this)
+            R.id.btnSearch -> if (!bluetoothControl!!.isConnected) {
+                bluetoothControl?.enableBtAdapter(this)
             } else {
-                bleControl!!.disconnect()
+                bluetoothControl!!.disconnect()
             }
         }
     }
@@ -100,7 +105,7 @@ class MainActivity : AppCompatActivity(), StateListener {
     }
 
     override fun onBluetoothEnabled() {
-        bleControl?.scanLeDevice(this)
+        bluetoothControl?.scanLeDevice(this)
         searchDialog!!.show()
 
         btDevices.clear()
@@ -109,21 +114,21 @@ class MainActivity : AppCompatActivity(), StateListener {
 
     override fun onResume() {
         super.onResume()
-        bleControl?.registerBtReceiver(this)
-        bleControl?.registerFoundReceiver(this)
-        bleControl?.registerBluetoothAdapterReceiver(this)
+        bluetoothControl?.registerBtReceiver(this)
+        bluetoothControl?.registerFoundReceiver(this)
+        bluetoothControl?.registerBluetoothAdapterReceiver(this)
     }
 
     override fun onPause() {
         super.onPause()
-        bleControl?.unregisterBtReceiver(this)
-        bleControl?.unregisterFoundReceiver(this)
-        bleControl?.unregisterBluetoothAdapterReceiver(this)
+        bluetoothControl?.unregisterBtReceiver(this)
+        bluetoothControl?.unregisterFoundReceiver(this)
+        bluetoothControl?.unregisterBluetoothAdapterReceiver(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         dataParser?.stop()
-        bleControl?.unbindService(this)
+        bluetoothControl?.unbindService(this)
     }
 }

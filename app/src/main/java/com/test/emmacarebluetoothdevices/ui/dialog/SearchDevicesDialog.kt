@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.dialog
+package com.test.emmacarebluetoothdevices.ui.dialog
 
 import android.app.Dialog
 import android.content.Context
@@ -6,6 +6,7 @@ import android.view.View
 import android.view.Window
 import android.widget.AdapterView
 import com.test.emmacarebluetoothdevices.R
+import com.test.emmacarebluetoothdevices.ui.adapter.DeviceListAdapter
 import kotlinx.android.synthetic.main.dialog_devices.*
 
 /**
