@@ -19,7 +19,7 @@
             android:textSize="18sp"
             android:padding="3dp"
             android:gravity="center"
-            android:text="Bluetooth Devices"/>
+            android:text="@string/bluetooth_devices"/>
 
         <View
             android:layout_width="match_parent"
@@ -47,13 +47,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            android:text="Search"
+            android:text="@string/search_oximeters"
             android:textAllCaps="false"
             android:id="@+id/btnSearchDevices"
             android:layout_gravity="center"/>
 
     </LinearLayout>
-
-
 
 </LinearLayout>

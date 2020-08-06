@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity(), StateListener {
         setContentView(R.layout.activity_main)
         dataParser = DataParser(object : PackageReceivedListener {
             override fun onOxiParamsChanged(params: OxiParams?) {
-                tvParams.text = "SpO2: ${params?.spo2}   Pulse Rate: ${params?.pulseRate}"
+                tvParams.text = getString(R.string.spot_and_pulse, params?.spo2, params?.pulseRate)
             }
 
             override fun onPlethWaveReceived(amp: Int) {
@@ -40,47 +40,21 @@ class MainActivity : AppCompatActivity(), StateListener {
 
         dataParser!!.start()
         bleControl = getDefaultBleController(this)
-        bleControl!!.enableBtAdapter()
         bleControl!!.bindService(this)
-        btDevicesAdapter = DeviceListAdapter(this, R.layout.device_adapter_view, btDevices)
+        btDevicesAdapter = DeviceListAdapter(this, R.layout.item_devices, btDevices)
         searchDialog = object : SearchDevicesDialog(this, btDevicesAdapter) {
-            override fun onSearchButtonClicked() {
-                btDevices.clear()
-                btDevicesAdapter!!.notifyDataSetChanged()
-                bleControl!!.scanLeDevice(this@MainActivity)
-            }
-
             override fun onClickDeviceItem(pos: Int) {
                 val device = btDevices[pos]
-                bleControl!!.connect(device!!)
+                bleControl?.connect(device!!)
                 dismiss()
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        bleControl!!.registerBtReceiver(this)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        bleControl!!.unregisterBtReceiver(this)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        dataParser!!.stop()
-        bleControl!!.unbindService(this)
-    }
-
     fun onClick(v: View) {
         when (v.id) {
             R.id.btnSearch -> if (!bleControl!!.isConnected) {
-                bleControl!!.scanLeDevice(this)
-                searchDialog!!.show()
-                btDevices.clear()
-                btDevicesAdapter!!.notifyDataSetChanged()
+                bleControl?.enableBtAdapter(this)
             } else {
                 bleControl!!.disconnect()
             }
@@ -95,26 +69,24 @@ class MainActivity : AppCompatActivity(), StateListener {
     }
 
     override fun onConnected() {
-        btnSearch.text = "Disconnect"
-        Toast.makeText(this@MainActivity, "Connected", Toast.LENGTH_SHORT).show()
+        btnSearch.text = getString(R.string.disconnected)
+        Toast.makeText(this@MainActivity, getString(R.string.connected), Toast.LENGTH_SHORT).show()
     }
 
     override fun onDisconnected() {
-        Toast.makeText(this@MainActivity, "Disconnected", Toast.LENGTH_SHORT).show()
-        btnSearch.text = "Search"
+        Toast.makeText(this@MainActivity, getString(R.string.disconnected), Toast.LENGTH_SHORT).show()
+        btnSearch.text = getString(R.string.search_oximeters)
     }
 
     override fun onReceiveData(dat: ByteArray?) {
         dataParser!!.add(dat!!)
     }
 
-    override fun onServicesDiscovered() { }
-
     override fun onScanStop() {
         searchDialog!!.stopSearch()
     }
 
-    override fun checkPermission() {
+    override fun onCheckPermission() {
         var permissionCheck = checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION")
         permissionCheck += checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION")
         if (permissionCheck != 0) {
@@ -125,5 +97,33 @@ class MainActivity : AppCompatActivity(), StateListener {
                 ), 1001
             )
         }
+    }
+
+    override fun onBluetoothEnabled() {
+        bleControl?.scanLeDevice(this)
+        searchDialog!!.show()
+
+        btDevices.clear()
+        btDevicesAdapter!!.notifyDataSetChanged()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bleControl?.registerBtReceiver(this)
+        bleControl?.registerFoundReceiver(this)
+        bleControl?.registerBluetoothAdapterReceiver(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        bleControl?.unregisterBtReceiver(this)
+        bleControl?.unregisterFoundReceiver(this)
+        bleControl?.unregisterBluetoothAdapterReceiver(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        dataParser?.stop()
+        bleControl?.unbindService(this)
     }
 }

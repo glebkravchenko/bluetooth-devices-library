@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import kotlinx.android.synthetic.main.device_adapter_view.view.*
+import kotlinx.android.synthetic.main.item_devices.view.*
 import java.util.*
 
 class DeviceListAdapter(context: Context, tvResourceId: Int, private val mDevices: ArrayList<BluetoothDevice?>): ArrayAdapter<BluetoothDevice>(context, tvResourceId, mDevices) {

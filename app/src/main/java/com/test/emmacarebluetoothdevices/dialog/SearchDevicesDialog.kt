@@ -6,7 +6,7 @@ import android.view.View
 import android.view.Window
 import android.widget.AdapterView
 import com.test.emmacarebluetoothdevices.R
-import kotlinx.android.synthetic.main.devices_dialog.*
+import kotlinx.android.synthetic.main.dialog_devices.*
 
 /**
  * Created by ZXX on 2017/4/28.
@@ -15,7 +15,7 @@ abstract class SearchDevicesDialog(context: Context?, adapter: DeviceListAdapter
 
     init {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-        setContentView(R.layout.devices_dialog)
+        setContentView(R.layout.dialog_devices)
 
         lvBluetoothDevices.adapter = adapter
         lvBluetoothDevices.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ -> onClickDeviceItem(position) }
@@ -28,7 +28,6 @@ abstract class SearchDevicesDialog(context: Context?, adapter: DeviceListAdapter
     }
 
     private fun startSearch() {
-        onSearchButtonClicked()
         pbSearchDevices.visibility = View.VISIBLE
         btnSearchDevices.visibility = View.GONE
     }
@@ -38,6 +37,5 @@ abstract class SearchDevicesDialog(context: Context?, adapter: DeviceListAdapter
         startSearch()
     }
 
-    abstract fun onSearchButtonClicked()
     abstract fun onClickDeviceItem(pos: Int)
 }

@@ -16,5 +16,4 @@
         android:id="@+id/tvDeviceAddress"
         android:textSize="15sp"/>
 
-
 </LinearLayout>

@@ -10,10 +10,9 @@ import android.util.Log
 import com.test.emmacarebluetoothdevices.ble.BluetoothLeService.LocalBinder
 import com.test.emmacarebluetoothdevices.data.Const
 
-class BleController private constructor(stateListener: StateListener) {
+class BleController private constructor(private val stateListener: StateListener) {
 
     private val btAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
-    private val stateListenerGlobal: StateListener by lazy { stateListener }
     private var bluetoothLeService: BluetoothLeService? = null
     private var receiveData: BluetoothGattCharacteristic? = null
     private var modifyName: BluetoothGattCharacteristic? = null
@@ -22,9 +21,12 @@ class BleController private constructor(stateListener: StateListener) {
     /**
      * enable bluetooth adapter
      */
-    fun enableBtAdapter() {
+    fun enableBtAdapter(context: Context) {
         if (!btAdapter.isEnabled) {
             btAdapter.enable()
+            registerBluetoothAdapterReceiver(context)
+        } else {
+            stateListener.onBluetoothEnabled()
         }
     }
 
@@ -52,22 +54,16 @@ class BleController private constructor(stateListener: StateListener) {
     fun scanLeDevice(context: Context) {
         if (btAdapter.isDiscovering) {
             btAdapter.cancelDiscovery()
-            stateListenerGlobal.onScanStop()
+            stateListener.onScanStop()
 
-            stateListenerGlobal.checkPermission()
-
+            stateListener.onCheckPermission()
             btAdapter.startDiscovery()
-
-            val discoverDevicesIntent = IntentFilter(BluetoothDevice.ACTION_FOUND)
-            context.registerReceiver(foundDeviceBroadcastReceiver, discoverDevicesIntent)
+            registerFoundReceiver(context)
         }
         if (!btAdapter.isDiscovering) {
-            stateListenerGlobal.checkPermission()
-
+            stateListener.onCheckPermission()
             btAdapter.startDiscovery()
-
-            val discoverDevicesIntent = IntentFilter(BluetoothDevice.ACTION_FOUND)
-            context.registerReceiver(foundDeviceBroadcastReceiver, discoverDevicesIntent)
+            registerFoundReceiver(context)
         }
     }
 
@@ -105,11 +101,11 @@ class BleController private constructor(stateListener: StateListener) {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 BluetoothLeService.ACTION_GATT_CONNECTED -> {
-                    stateListenerGlobal.onConnected()
+                    stateListener.onConnected()
                     isConnected = true
                 }
                 BluetoothLeService.ACTION_GATT_DISCONNECTED -> {
-                    stateListenerGlobal.onDisconnected()
+                    stateListener.onDisconnected()
                     modifyName = null
                     receiveData = null
                     isConnected = false
@@ -117,14 +113,13 @@ class BleController private constructor(stateListener: StateListener) {
                 BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    stateListenerGlobal.onServicesDiscovered()
                     bluetoothLeService!!.setCharacteristicNotification(receiveData!!, true)
                 }
                 BluetoothLeService.ACTION_DATA_AVAILABLE -> {
                     Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothLeService.EXTRA_DATA))
                 }
                 BluetoothLeService.ACTION_SPO2_DATA_AVAILABLE -> {
-                    stateListenerGlobal.onReceiveData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA))
+                    stateListener.onReceiveData(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA))
                 }
             }
         }
@@ -136,19 +131,20 @@ class BleController private constructor(stateListener: StateListener) {
             val action = intent.action
             if (action == BluetoothDevice.ACTION_FOUND) {
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                stateListenerGlobal.onFoundDevice(device)
+                stateListener.onFoundDevice(device)
             }
         }
     }
 
-    fun registerBtReceiver(context: Context) {
-        context.registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter())
-        context.registerReceiver(foundDeviceBroadcastReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
-    }
-
-    fun unregisterBtReceiver(context: Context) {
-        context.unregisterReceiver(gattUpdateReceiver)
-        context.unregisterReceiver(foundDeviceBroadcastReceiver)
+    private val detectBluetoothAdapterAvailability: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent) {
+            val action = intent.action
+            if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+                when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                    BluetoothAdapter.STATE_TURNING_ON -> stateListener.onBluetoothEnabled()
+                }
+            }
+        }
     }
 
     fun initCharacteristic() {
@@ -172,6 +168,30 @@ class BleController private constructor(stateListener: StateListener) {
         }
     }
 
+    fun registerBtReceiver(context: Context) {
+        context.registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter())
+    }
+
+    fun unregisterBtReceiver(context: Context) {
+        context.unregisterReceiver(gattUpdateReceiver)
+    }
+
+    fun registerFoundReceiver(context: Context) {
+        context.registerReceiver(foundDeviceBroadcastReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
+    }
+
+    fun unregisterFoundReceiver(context: Context) {
+        context.unregisterReceiver(foundDeviceBroadcastReceiver)
+    }
+
+    fun registerBluetoothAdapterReceiver(context: Context) {
+        context.registerReceiver(detectBluetoothAdapterAvailability, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+    }
+
+    fun unregisterBluetoothAdapterReceiver(context: Context) {
+        context.unregisterReceiver(detectBluetoothAdapterAvailability)
+    }
+
     /**
      * BTController interfaces
      */
@@ -180,9 +200,9 @@ class BleController private constructor(stateListener: StateListener) {
         fun onConnected()
         fun onDisconnected()
         fun onReceiveData(dat: ByteArray?)
-        fun onServicesDiscovered()
         fun onScanStop()
-        fun checkPermission()
+        fun onCheckPermission()
+        fun onBluetoothEnabled()
     }
 
     companion object {
