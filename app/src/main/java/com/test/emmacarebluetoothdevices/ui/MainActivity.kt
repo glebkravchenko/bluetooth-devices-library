@@ -3,7 +3,6 @@ package com.test.emmacarebluetoothdevices.ui
 import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.os.Bundle
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.test.emmacarebluetoothdevices.R
@@ -19,15 +18,22 @@ import java.util.*
 
 class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
 
-    private var dataParser: DataParser? = null
-    private var bluetoothControl: BluetoothController? = null
-    private var searchDialog: SearchDevicesDialog? = null
-    private var btDevicesAdapter: DeviceListAdapter? = null
+    private lateinit var dataParser: DataParser
+    private lateinit var bluetoothController: BluetoothController
+    private lateinit var searchDialog: SearchDevicesDialog
+    private lateinit var btDevicesAdapter: DeviceListAdapter
     private val btDevices = ArrayList<BluetoothDevice?>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setupDataParser()
+        setupBluetoothController()
+        setupSearchDialog()
+        setupListeners()
+    }
+
+    private fun setupDataParser() {
         dataParser = DataParser(object : PackageReceivedListener {
             override fun onOxiParamsChanged(params: OxiParams?) {
                 tvParams.text = getString(R.string.spot_and_pulse, params?.spo2, params?.pulseRate)
@@ -37,31 +43,30 @@ class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
                 wfvPleth.addAmp(amp)
             }
         })
+        dataParser.start()
+    }
 
-        dataParser!!.start()
-        bluetoothControl = getDefaultBleController(this)
-        bluetoothControl!!.bindService(this)
-        btDevicesAdapter =
-            DeviceListAdapter(
-                this,
-                R.layout.item_devices,
-                btDevices
-            )
-        searchDialog = object : SearchDevicesDialog(this, btDevicesAdapter) {
-            override fun onClickDeviceItem(pos: Int) {
-                val device = btDevices[pos]
-                bluetoothControl?.connect(device!!)
-                dismiss()
-            }
+    private fun setupBluetoothController() {
+        bluetoothController = getDefaultBleController(this)
+        bluetoothController.bindService(this)
+        btDevicesAdapter = DeviceListAdapter(this, R.layout.item_devices, btDevices)
+    }
+
+    private fun setupSearchDialog() {
+        searchDialog = SearchDevicesDialog(this, btDevicesAdapter)
+        searchDialog.setListener { position, dialog ->
+            val device = btDevices[position]
+            bluetoothController.connect(device!!)
+            dialog.dismiss()
         }
     }
 
-    fun onClick(v: View) {
-        when (v.id) {
-            R.id.btnSearch -> if (!bluetoothControl!!.isConnected) {
-                bluetoothControl?.enableBtAdapter(this)
+    private fun setupListeners() {
+        btnSearch.setOnClickListener {
+            if (!bluetoothController.isConnected) {
+                bluetoothController.enableBtAdapter(this)
             } else {
-                bluetoothControl!!.disconnect()
+                bluetoothController.disconnect()
             }
         }
     }
@@ -69,7 +74,7 @@ class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
     override fun onFoundDevice(device: BluetoothDevice?) {
         if (!btDevices.contains(device)) {
             btDevices.add(device)
-            btDevicesAdapter!!.notifyDataSetChanged()
+            btDevicesAdapter.notifyDataSetChanged()
         }
     }
 
@@ -84,11 +89,7 @@ class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
     }
 
     override fun onReceiveData(dat: ByteArray?) {
-        dataParser!!.add(dat!!)
-    }
-
-    override fun onScanStop() {
-        searchDialog!!.stopSearch()
+        dataParser.add(dat!!)
     }
 
     override fun onCheckPermission() {
@@ -105,8 +106,8 @@ class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
     }
 
     override fun onBluetoothEnabled() {
-        bluetoothControl?.scanLeDevice(this)
-        searchDialog!!.show()
+        bluetoothController.scanLeDevice(this)
+        searchDialog.show()
 
         btDevices.clear()
         btDevicesAdapter!!.notifyDataSetChanged()
@@ -114,21 +115,21 @@ class MainActivity : AppCompatActivity(), BluetoothController.StateListener {
 
     override fun onResume() {
         super.onResume()
-        bluetoothControl?.registerBtReceiver(this)
-        bluetoothControl?.registerFoundReceiver(this)
-        bluetoothControl?.registerBluetoothAdapterReceiver(this)
+        bluetoothController.registerBtReceiver(this)
+        bluetoothController.registerFoundReceiver(this)
+        bluetoothController.registerBluetoothAdapterReceiver(this)
     }
 
     override fun onPause() {
         super.onPause()
-        bluetoothControl?.unregisterBtReceiver(this)
-        bluetoothControl?.unregisterFoundReceiver(this)
-        bluetoothControl?.unregisterBluetoothAdapterReceiver(this)
+        bluetoothController.unregisterBtReceiver(this)
+        bluetoothController.unregisterFoundReceiver(this)
+        bluetoothController.unregisterBluetoothAdapterReceiver(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        dataParser?.stop()
-        bluetoothControl?.unbindService(this)
+        dataParser.stop()
+        bluetoothController.unbindService(this)
     }
 }

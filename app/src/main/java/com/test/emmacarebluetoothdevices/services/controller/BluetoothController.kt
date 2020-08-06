@@ -7,11 +7,20 @@ import android.bluetooth.BluetoothGattService
 import android.content.*
 import android.os.IBinder
 import android.util.Log
-import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
 import com.test.emmacarebluetoothdevices.etc.Const
 import com.test.emmacarebluetoothdevices.services.BluetoothService
+import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
 
 class BluetoothController private constructor(private val stateListener: StateListener) {
+
+    interface StateListener {
+        fun onFoundDevice(device: BluetoothDevice?)
+        fun onConnected()
+        fun onDisconnected()
+        fun onReceiveData(dat: ByteArray?)
+        fun onCheckPermission()
+        fun onBluetoothEnabled()
+    }
 
     private val btAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
     private var bluetoothService: BluetoothService? = null
@@ -55,7 +64,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
     fun scanLeDevice(context: Context) {
         if (btAdapter.isDiscovering) {
             btAdapter.cancelDiscovery()
-            stateListener.onScanStop()
 
             stateListener.onCheckPermission()
             btAdapter.startDiscovery()
@@ -113,8 +121,12 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 }
                 BluetoothService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
-                    initCharacteristic()
-                    bluetoothService!!.setCharacteristicNotification(receiveData!!, true)
+                    try {
+                        initCharacteristic()
+                        bluetoothService!!.setCharacteristicNotification(receiveData!!, true)
+                    } catch (e: Exception) {
+                        disconnect()
+                    }
                 }
                 BluetoothService.ACTION_DATA_AVAILABLE -> {
                     Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothService.EXTRA_DATA))
@@ -195,22 +207,9 @@ class BluetoothController private constructor(private val stateListener: StateLi
         context.unregisterReceiver(detectBluetoothAdapterAvailability)
     }
 
-    /**
-     * BTController interfaces
-     */
-    interface StateListener {
-        fun onFoundDevice(device: BluetoothDevice?)
-        fun onConnected()
-        fun onDisconnected()
-        fun onReceiveData(dat: ByteArray?)
-        fun onScanStop()
-        fun onCheckPermission()
-        fun onBluetoothEnabled()
-    }
-
     companion object {
-        private var mBluetoothController: BluetoothController? = null
         private val TAG = this.javaClass.name
+        private lateinit var mBluetoothController: BluetoothController
 
         /**
          * Get a Controller
@@ -218,13 +217,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
          * @return
          */
         @JvmStatic
-        fun getDefaultBleController(stateListener: StateListener): BluetoothController? {
-            if (mBluetoothController == null) {
-                mBluetoothController =
-                    BluetoothController(
-                        stateListener
-                    )
-            }
+        fun getDefaultBleController(stateListener: StateListener): BluetoothController {
+            mBluetoothController = BluetoothController(stateListener)
             return mBluetoothController
         }
 
