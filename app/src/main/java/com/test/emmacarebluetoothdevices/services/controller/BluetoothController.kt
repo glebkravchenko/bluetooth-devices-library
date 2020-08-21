@@ -8,6 +8,8 @@ import android.content.*
 import android.os.IBinder
 import android.util.Log
 import com.test.emmacarebluetoothdevices.etc.Const
+import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_RECEIVE
+import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_RECEIVE
 import com.test.emmacarebluetoothdevices.services.BluetoothService
 import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
 
@@ -87,12 +89,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 }
                 BluetoothService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
-                    try {
-                        initCharacteristic()
-                        bluetoothService!!.setCharacteristicNotification(receiveData!!, true)
-                    } catch (e: Exception) {
-                        disconnect()
-                    }
+                    initCharacteristic()
+                    bluetoothService!!.setCharacteristicNotification(receiveData!!, true)
                 }
                 BluetoothService.ACTION_DATA_AVAILABLE -> {
                     Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothService.EXTRA_DATA))
@@ -118,19 +116,34 @@ class BluetoothController private constructor(private val stateListener: StateLi
     fun initCharacteristic() {
         val services = bluetoothService!!.supportedGattServices
         var mDataService: BluetoothGattService? = null
-        if (services == null) return
-        for (service in services) {
-            if (service.uuid == Const.UUID_SERVICE_DATA) {
+        if (services == null) {
+            return
+        }
+
+        services.forEach { service ->
+            if (service.uuid == Const.OXYMETER_UUID_SERVICE_DATA
+                || service.uuid == Const.THERMOMETER_UUID_SERVICE_DATA
+                || service.uuid == Const.SCALES_UUID_SERVICE_DATA
+                || service.uuid == Const.TONOMETER_UUID_SERVICE_DATA) {
                 mDataService = service
             }
         }
+
         if (mDataService != null) {
-            val characteristics = mDataService.characteristics
-            for (ch in characteristics) {
-                if (ch.uuid == Const.UUID_CHARACTER_RECEIVE) {
-                    receiveData = ch
-                } else if (ch.uuid == Const.UUID_MODIFY_BT_NAME) {
-                    modifyName = ch
+            val characteristics = mDataService?.characteristics
+            if (characteristics != null) {
+                for (ch in characteristics) {
+                    if (ch.uuid == Const.OXYMETER_UUID_CHARACTER_RECEIVE
+                        || ch.uuid == Const.THERMOMETER_UUID_CHARACTER_RECEIVE
+                        || ch.uuid == SCALES_UUID_CHARACTER_RECEIVE
+                        || ch.uuid == TONOMETER_UUID_CHARACTER_RECEIVE) {
+                        receiveData = ch
+                    } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME
+                        || ch.uuid == Const.THERMOMETER_UUID_MODIFY_BT_NAME
+                        || ch.uuid == Const.SCALES_UUID_MODIFY_BT_NAME
+                        || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME) {
+                        modifyName = ch
+                    }
                 }
             }
         }

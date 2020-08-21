@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.ui
+package com.test.emmacarebluetoothdevices.ui.adapter
 
 import android.bluetooth.BluetoothDevice
 import android.view.LayoutInflater
