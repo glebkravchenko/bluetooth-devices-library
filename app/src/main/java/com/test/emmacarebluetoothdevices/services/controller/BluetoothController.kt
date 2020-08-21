@@ -14,7 +14,6 @@ import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
 class BluetoothController private constructor(private val stateListener: StateListener) {
 
     interface StateListener {
-        fun onFoundDevice(device: BluetoothDevice?)
         fun onConnected()
         fun onDisconnected()
         fun onReceiveData(dat: ByteArray?)
@@ -22,23 +21,10 @@ class BluetoothController private constructor(private val stateListener: StateLi
         fun onBluetoothEnabled()
     }
 
-    private val btAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
     private var bluetoothService: BluetoothService? = null
     private var receiveData: BluetoothGattCharacteristic? = null
     private var modifyName: BluetoothGattCharacteristic? = null
     var isConnected = false
-
-    /**
-     * enable bluetooth adapter
-     */
-    fun enableBtAdapter(context: Context) {
-        if (!btAdapter.isEnabled) {
-            btAdapter.enable()
-            registerBluetoothAdapterReceiver(context)
-        } else {
-            stateListener.onBluetoothEnabled()
-        }
-    }
 
     /**
      * connect the bluetooth device
@@ -54,26 +40,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
      */
     fun disconnect() {
         bluetoothService!!.disconnect()
-    }
-
-    /**
-     * Scan bluetooth devices
-     *
-     * @param enable
-     */
-    fun scanLeDevice(context: Context) {
-        if (btAdapter.isDiscovering) {
-            btAdapter.cancelDiscovery()
-
-            stateListener.onCheckPermission()
-            btAdapter.startDiscovery()
-            registerFoundReceiver(context)
-        }
-        if (!btAdapter.isDiscovering) {
-            stateListener.onCheckPermission()
-            btAdapter.startDiscovery()
-            registerFoundReceiver(context)
-        }
     }
 
     private val mServiceConnection: ServiceConnection = object : ServiceConnection {
@@ -138,17 +104,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
         }
     }
 
-    private val foundDeviceBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-
-        override fun onReceive(context: Context?, intent: Intent) {
-            val action = intent.action
-            if (action == BluetoothDevice.ACTION_FOUND) {
-                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                stateListener.onFoundDevice(device)
-            }
-        }
-    }
-
     private val detectBluetoothAdapterAvailability: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
             val action = intent.action
@@ -182,7 +137,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
     }
 
     fun registerBtReceiver(context: Context) {
-        context.registerReceiver(gattUpdateReceiver,
+        context.registerReceiver(
+            gattUpdateReceiver,
             makeGattUpdateIntentFilter()
         )
     }
@@ -191,16 +147,11 @@ class BluetoothController private constructor(private val stateListener: StateLi
         context.unregisterReceiver(gattUpdateReceiver)
     }
 
-    fun registerFoundReceiver(context: Context) {
-        context.registerReceiver(foundDeviceBroadcastReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
-    }
-
-    fun unregisterFoundReceiver(context: Context) {
-        context.unregisterReceiver(foundDeviceBroadcastReceiver)
-    }
-
     fun registerBluetoothAdapterReceiver(context: Context) {
-        context.registerReceiver(detectBluetoothAdapterAvailability, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+        context.registerReceiver(
+            detectBluetoothAdapterAvailability,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
     }
 
     fun unregisterBluetoothAdapterReceiver(context: Context) {

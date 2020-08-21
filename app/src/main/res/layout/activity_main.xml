@@ -33,13 +33,12 @@
         android:gravity="center"
         android:padding="10dp"
         android:textColor="@android:color/black"
-        android:textSize="24sp" />
+        android:textSize="24sp"
+        tools:text="sdfdsfdsfdsf" />
 
-    <com.test.emmacarebluetoothdevices.ui.views.WaveformView
-        android:id="@+id/wfvPleth"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_margin="8dp" />
-
+        android:layout_height="match_parent" />
 
 </LinearLayout>

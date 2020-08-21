@@ -36,12 +36,6 @@
             android:id="@+id/lvBluetoothDevices">
         </ListView>
 
-        <ProgressBar
-            android:layout_marginTop="24dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/pbSearchDevices"/>
-
     </LinearLayout>
 
 </LinearLayout>
