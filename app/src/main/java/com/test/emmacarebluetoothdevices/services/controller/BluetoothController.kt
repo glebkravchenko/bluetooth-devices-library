@@ -96,22 +96,27 @@ class BluetoothController private constructor(private val stateListener: StateLi
                     Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothService.EXTRA_DATA))
                 }
                 BluetoothService.ACTION_SPO2_DATA_AVAILABLE -> {
-                    stateListener.onReceiveData(intent.getByteArrayExtra(BluetoothService.EXTRA_DATA))
+                    val data = intent.getByteArrayExtra(BluetoothService.EXTRA_DATA)
+                    stateListener.onReceiveData(data)
                 }
             }
         }
     }
 
-    private val detectBluetoothAdapterAvailability: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            val action = intent.action
-            if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-                when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
-                    BluetoothAdapter.STATE_TURNING_ON -> stateListener.onBluetoothEnabled()
+    private val detectBluetoothAdapterAvailability: BroadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent) {
+                val action = intent.action
+                if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+                    when (intent.getIntExtra(
+                        BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR
+                    )) {
+                        BluetoothAdapter.STATE_TURNING_ON -> stateListener.onBluetoothEnabled()
+                    }
                 }
             }
         }
-    }
 
     fun initCharacteristic() {
         val services = bluetoothService!!.supportedGattServices
@@ -124,7 +129,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
             if (service.uuid == Const.OXYMETER_UUID_SERVICE_DATA
                 || service.uuid == Const.THERMOMETER_UUID_SERVICE_DATA
                 || service.uuid == Const.SCALES_UUID_SERVICE_DATA
-                || service.uuid == Const.TONOMETER_UUID_SERVICE_DATA) {
+                || service.uuid == Const.TONOMETER_UUID_SERVICE_DATA
+            ) {
                 mDataService = service
             }
         }
@@ -136,12 +142,14 @@ class BluetoothController private constructor(private val stateListener: StateLi
                     if (ch.uuid == Const.OXYMETER_UUID_CHARACTER_RECEIVE
                         || ch.uuid == Const.THERMOMETER_UUID_CHARACTER_RECEIVE
                         || ch.uuid == SCALES_UUID_CHARACTER_RECEIVE
-                        || ch.uuid == TONOMETER_UUID_CHARACTER_RECEIVE) {
+                        || ch.uuid == TONOMETER_UUID_CHARACTER_RECEIVE
+                    ) {
                         receiveData = ch
                     } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.THERMOMETER_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.SCALES_UUID_MODIFY_BT_NAME
-                        || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME) {
+                        || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME
+                    ) {
                         modifyName = ch
                     }
                 }

@@ -2,6 +2,7 @@ package com.test.emmacarebluetoothdevices.ui
 
 import android.bluetooth.BluetoothDevice
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -13,6 +14,7 @@ import com.test.emmacarebluetoothdevices.etc.DataParser
 import com.test.emmacarebluetoothdevices.services.controller.BluetoothController
 import com.test.emmacarebluetoothdevices.ui.adapter.BluetoothListAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+
 
 class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothListAdapter.Listener,
     BluetoothController.StateListener {
@@ -43,6 +45,7 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothList
         btnSearch.setOnClickListener {
             if (bluetoothHelper.isBluetoothScanning()) {
                 bluetoothHelper.stopDiscovery()
+                bluetoothKit.disconnect()
             } else {
                 itemList.clear()
                 bluetoothHelper.startDiscovery()
@@ -52,7 +55,12 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothList
         viewAdapter = BluetoothListAdapter(itemList, this)
         recycler_view.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-            addItemDecoration(DividerItemDecoration(this@MainActivity, LinearLayoutManager.VERTICAL))
+            addItemDecoration(
+                DividerItemDecoration(
+                    this@MainActivity,
+                    LinearLayoutManager.VERTICAL
+                )
+            )
             adapter = viewAdapter
         }
 
@@ -61,7 +69,7 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothList
                 tvParams.text = getString(R.string.spot_and_pulse, params?.spo2, params?.pulseRate)
             }
 
-            override fun onPlethWaveReceived(amp: Int) { }
+            override fun onPlethWaveReceived(amp: Int) {}
         })
         dataParser.start()
 
@@ -122,6 +130,8 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothList
 
     override fun onReceiveData(dat: ByteArray?) {
         dataParser.add(dat!!)
+
+        Log.e("MainActivity", "Temperature " + dataParser.getTemperature(dat))
     }
 
     override fun onCheckPermission() {

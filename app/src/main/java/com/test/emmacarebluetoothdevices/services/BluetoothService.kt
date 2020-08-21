@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.util.Log
 import com.test.emmacarebluetoothdevices.etc.Const
 
+
 class BluetoothService : Service() {
 
     private var bluetoothManager: BluetoothManager? = null
@@ -28,7 +29,10 @@ class BluetoothService : Service() {
                 broadcastUpdate(intentAction)
                 Log.i(TAG, "Connected to GATT server.")
                 // Attempts to discover services after successful connection.
-                Log.i(TAG, "Attempting to start service discovery:" + bluetoothGatt!!.discoverServices())
+                Log.i(
+                    TAG,
+                    "Attempting to start service discovery:" + bluetoothGatt!!.discoverServices()
+                )
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED
                 connectionState = STATE_DISCONNECTED
@@ -45,13 +49,20 @@ class BluetoothService : Service() {
             }
         }
 
-        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
             }
         }
 
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
             broadcastUpdate(ACTION_SPO2_DATA_AVAILABLE, characteristic)
         }
     }
@@ -62,23 +73,24 @@ class BluetoothService : Service() {
     }
 
     private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
-        val intent = Intent(action)
         if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid) {
+            val spo2Intent = Intent(action)
             val data = characteristic.value
             for (b in data) {
                 buf[bufIndex] = b
                 bufIndex++
                 if (bufIndex == buf.size) {
-                    intent.putExtra(EXTRA_DATA, buf)
-                    sendBroadcast(intent)
+                    spo2Intent.putExtra(EXTRA_DATA, buf)
+                    sendBroadcast(spo2Intent)
                     bufIndex = 0
                 }
             }
         } else {
             val data = characteristic.value
             if (data != null && data.isNotEmpty()) {
-                intent.putExtra(EXTRA_DATA, String(data))
-                sendBroadcast(intent)
+                val defaultIntent = Intent(action)
+                defaultIntent.putExtra(EXTRA_DATA, data)
+                sendBroadcast(defaultIntent)
             }
         }
     }
@@ -170,7 +182,10 @@ class BluetoothService : Service() {
         bluetoothGatt!!.readCharacteristic(characteristic)
     }
 
-    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic, enabled: Boolean) {
+    fun setCharacteristicNotification(
+        characteristic: BluetoothGattCharacteristic,
+        enabled: Boolean
+    ) {
         if (bluetoothAdapter == null || bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
@@ -178,44 +193,62 @@ class BluetoothService : Service() {
         bluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
 
         // This is specific to Oximeter Data Transfer.
+        if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
+            || Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
+            || Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid
+            || Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
+        ) {
+            val descriptor = characteristic.getDescriptor(Const.UUID_CLIENT_CHARACTER_CONFIG)
+            if (enabled) {
+                descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            } else {
+                descriptor.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+            }
+
+            bluetoothGatt?.writeDescriptor(descriptor)
+//            writeToDevice(characteristic)
+        }
+    }
+
+    private fun writeToDevice(characteristic: BluetoothGattCharacteristic) {
         when {
-            Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                val descriptor = characteristic.getDescriptor(Const.OXYMETER_UUID_CLIENT_CHARACTER_CONFIG)
-                writeDescriptor(descriptor, enabled)
+            Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
+                write(
+                    characteristic,
+                    byteArrayOfInts(
+                        0xFD,
+                        0x37,
+                        0x01,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0xCB
+                    )
+                )
             }
             Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                val descriptor = characteristic.getDescriptor(Const.THERMOMETER_UUID_CLIENT_CHARACTER_CONFIG)
-                writeDescriptor(descriptor, enabled)
+                write(characteristic, byteArrayOfInts(0xFE, 0xFD))
             }
             Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                val descriptor = characteristic.getDescriptor(Const.SCALES_UUID_CLIENT_CHARACTER_CONFIG)
-                writeDescriptor(descriptor, enabled)
-            }
-            Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                val descriptor = characteristic.getDescriptor(Const.TONOMETER_UUID_CLIENT_CHARACTER_CONFIG)
-                writeDescriptor(descriptor, enabled)
+                write(characteristic, byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A))
             }
         }
     }
 
-    private fun writeDescriptor(descriptor: BluetoothGattDescriptor, enabled: Boolean) {
-        if (enabled) {
-            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        } else {
-            descriptor.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-        }
-
-        bluetoothGatt?.writeDescriptor(descriptor)
-    }
+    private fun byteArrayOfInts(vararg ints: Int) =
+        ByteArray(ints.size) { pos -> ints[pos].toByte() }
 
     val supportedGattServices: List<BluetoothGattService>?
         get() = if (bluetoothGatt == null) null else bluetoothGatt!!.services
 
-    fun write(ch: BluetoothGattCharacteristic, bytes: ByteArray) {
+    private fun write(ch: BluetoothGattCharacteristic, bytes: ByteArray) {
         var byteOffset = 0
         while (bytes.size - byteOffset > TRANSFER_PACKAGE_SIZE) {
-            val b =
-                ByteArray(TRANSFER_PACKAGE_SIZE)
+            val b = ByteArray(TRANSFER_PACKAGE_SIZE)
             System.arraycopy(
                 bytes,
                 byteOffset,
@@ -232,6 +265,7 @@ class BluetoothService : Service() {
             System.arraycopy(bytes, byteOffset, b, 0, bytes.size - byteOffset)
             ch.value = b
             bluetoothGatt!!.writeCharacteristic(ch)
+            Log.w(TAG, "Wrote ${bytes.size} bytes")
         }
     }
 
@@ -242,7 +276,8 @@ class BluetoothService : Service() {
         private const val STATE_CONNECTED = 2
         const val ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED"
         const val ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED"
-        const val ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
+        const val ACTION_GATT_SERVICES_DISCOVERED =
+            "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
         const val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
         const val ACTION_SPO2_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_SPO2_DATA_AVAILABLE"
         const val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
