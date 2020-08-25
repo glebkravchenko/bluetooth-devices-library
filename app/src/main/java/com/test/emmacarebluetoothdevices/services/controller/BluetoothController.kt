@@ -144,12 +144,14 @@ class BluetoothController private constructor(private val stateListener: StateLi
                         || ch.uuid == Const.TONOMETER_UUID_CHARACTER_RECEIVE
                     ) {
                         receiveData = ch
+                        receiveData?.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                     } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.THERMOMETER_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.SCALES_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME
                     ) {
                         modifyName = ch
+                        modifyName?.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                     }
                 }
             }

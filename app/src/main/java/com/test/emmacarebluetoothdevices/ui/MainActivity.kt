@@ -2,7 +2,6 @@ package com.test.emmacarebluetoothdevices.ui
 
 import android.bluetooth.BluetoothDevice
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
@@ -75,6 +74,8 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
                 id: Long
             ) {
                 selectedDevice = devicesList[position]
+                bluetoothHelper.stopDiscovery()
+                bluetoothController.disconnect()
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {}
@@ -82,11 +83,11 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
     }
 
     override fun onStartDiscovery() {
-//        btnSearch.text = "Stop discovery"
+
     }
 
     override fun onFinishDiscovery() {
-//        btnSearch.text = "Start discovery"
+
     }
 
     override fun onEnabledBluetooth() { }
@@ -151,17 +152,20 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
     }
 
     override fun onReceiveData(dat: ByteArray?) {
-        dataParser.add(dat!!)
-
-        Log.e(TAG, "Temperature " + dataParser.getTemperature(dat))
+        when(selectedDevice) {
+            OXYMETER -> dataParser.add(dat!!)
+            TONOMETER -> tvParams.text = dat?.contentToString()
+            THERMOMETER -> tvParams.text = getString(R.string.temperature, dataParser.getTemperature(dat!!))
+            SCALES -> tvParams.text = dat?.contentToString()
+        }
     }
 
     override fun onCheckPermission() {
-//        TODO("Not yet implemented")
+
     }
 
     override fun onBluetoothEnabled() {
-//        TODO("Not yet implemented")
+
     }
 
     companion object {

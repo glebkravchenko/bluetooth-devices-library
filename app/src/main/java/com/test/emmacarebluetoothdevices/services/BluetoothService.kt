@@ -152,8 +152,7 @@ class BluetoothService : Service() {
         bluetoothGatt = device.connectGatt(this, false, mGattCallback)
         Log.d(TAG, "Trying to create a new connection.")
         bluetoothDeviceAddress = address
-        connectionState =
-            STATE_CONNECTING
+        connectionState = STATE_CONNECTING
         return true
     }
 
@@ -189,6 +188,7 @@ class BluetoothService : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
+
         bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
 
         if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
@@ -210,16 +210,16 @@ class BluetoothService : Service() {
     fun writeToDevice(characteristic: BluetoothGattCharacteristic) {
         when {
             Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                write(
+                writeCharacteristic(
                     characteristic,
-                    byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
+                    byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0X0D, 0x0A)
                 )
             }
             Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                write(characteristic, byteArrayOfInts(0xFE, 0xFD))
+                writeCharacteristic(characteristic, byteArrayOfInts(0xFE, 0xFD))
             }
             Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                write(
+                writeCharacteristic(
                     characteristic,
                     byteArrayOfInts(
                         0xFD,
@@ -239,36 +239,17 @@ class BluetoothService : Service() {
         }
     }
 
+    private fun writeCharacteristic(characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+        characteristic.value = value
+        bluetoothGatt?.writeCharacteristic(characteristic)
+        Log.w(TAG, "Wrote ${value.size} bytes")
+    }
+
     private fun byteArrayOfInts(vararg ints: Int) =
         ByteArray(ints.size) { pos -> ints[pos].toByte() }
 
     val supportedGattServices: List<BluetoothGattService>?
         get() = if (bluetoothGatt == null) null else bluetoothGatt?.services
-
-    private fun write(ch: BluetoothGattCharacteristic, bytes: ByteArray) {
-        var byteOffset = 0
-        while (bytes.size - byteOffset > TRANSFER_PACKAGE_SIZE) {
-            val b = ByteArray(TRANSFER_PACKAGE_SIZE)
-            System.arraycopy(
-                bytes,
-                byteOffset,
-                b,
-                0,
-                TRANSFER_PACKAGE_SIZE
-            )
-            ch.value = b
-            bluetoothGatt?.writeCharacteristic(ch)
-            byteOffset += TRANSFER_PACKAGE_SIZE
-        }
-
-        if (bytes.size - byteOffset != 0) {
-            val b = ByteArray(bytes.size - byteOffset)
-            System.arraycopy(bytes, byteOffset, b, 0, bytes.size - byteOffset)
-            ch.value = b
-            bluetoothGatt?.writeCharacteristic(ch)
-            Log.w(TAG, "Wrote ${bytes.size} bytes")
-        }
-    }
 
     companion object {
         private val TAG = BluetoothService::class.java.simpleName
@@ -282,6 +263,5 @@ class BluetoothService : Service() {
         const val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
         const val ACTION_SPO2_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_SPO2_DATA_AVAILABLE"
         const val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
-        private const val TRANSFER_PACKAGE_SIZE = 10
     }
 }
