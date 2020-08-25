@@ -1,6 +1,5 @@
 package com.test.emmacarebluetoothdevices.services.controller
 
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
@@ -17,8 +16,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
         fun onConnected()
         fun onDisconnected()
         fun onReceiveData(dat: ByteArray?)
-        fun onCheckPermission()
-        fun onBluetoothEnabled()
     }
 
     private var bluetoothService: BluetoothService? = null
@@ -102,21 +99,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
         }
     }
 
-    private val detectBluetoothAdapterAvailability: BroadcastReceiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent) {
-                val action = intent.action
-                if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-                    when (intent.getIntExtra(
-                        BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR
-                    )) {
-                        BluetoothAdapter.STATE_TURNING_ON -> stateListener.onBluetoothEnabled()
-                    }
-                }
-            }
-        }
-
     fun initCharacteristic() {
         val services = bluetoothService?.supportedGattServices
         var dataService: BluetoothGattService? = null
@@ -167,17 +149,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
 
     fun unregisterBtReceiver(context: Context) {
         context.unregisterReceiver(gattUpdateReceiver)
-    }
-
-    fun registerBluetoothAdapterReceiver(context: Context) {
-        context.registerReceiver(
-            detectBluetoothAdapterAvailability,
-            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        )
-    }
-
-    fun unregisterBluetoothAdapterReceiver(context: Context) {
-        context.unregisterReceiver(detectBluetoothAdapterAvailability)
     }
 
     companion object {

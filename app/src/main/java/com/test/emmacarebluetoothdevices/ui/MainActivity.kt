@@ -82,13 +82,9 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
         }
     }
 
-    override fun onStartDiscovery() {
+    override fun onStartDiscovery() { }
 
-    }
-
-    override fun onFinishDiscovery() {
-
-    }
+    override fun onFinishDiscovery() { }
 
     override fun onEnabledBluetooth() { }
 
@@ -96,26 +92,19 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
 
     override fun getBluetoothDeviceList(device: BluetoothDevice) {
         when(selectedDevice) {
-            OXYMETER -> {
-                if(device.name == NAME_OXYMETER) {
-                    bluetoothController.connect(device)
-                }
-            }
-            TONOMETER -> {
-                if(device.name == NAME_TONOMETER) {
-                    bluetoothController.connect(device)
-                }
-            }
-            THERMOMETER -> {
-                if(device.name == NAME_THERMOMETER) {
-                    bluetoothController.connect(device)
-                }
-            }
-            SCALES -> {
-                if(device.name == NAME_SCALE) {
-                    bluetoothController.connect(device)
-                }
-            }
+            OXYMETER -> if(device.name == NAME_OXYMETER) { bluetoothController.connect(device) }
+            TONOMETER -> if(device.name == NAME_TONOMETER) { bluetoothController.connect(device) }
+            THERMOMETER -> if(device.name == NAME_THERMOMETER) { bluetoothController.connect(device) }
+            SCALES -> if(device.name == NAME_SCALE) { bluetoothController.connect(device) }
+        }
+    }
+
+    override fun onReceiveData(dat: ByteArray?) {
+        when(selectedDevice) {
+            OXYMETER -> dataParser.add(dat!!)
+            TONOMETER -> tvParams.text = dat?.contentToString()
+            THERMOMETER -> tvParams.text = getString(R.string.temperature, dataParser.getTemperature(dat!!))
+            SCALES -> tvParams.text = dat?.contentToString()
         }
     }
 
@@ -123,7 +112,6 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
         super.onResume()
         bluetoothHelper.registerBluetoothStateChanged()
         bluetoothController.registerBtReceiver(this)
-        bluetoothController.registerBluetoothAdapterReceiver(this)
     }
 
     override fun onStop() {
@@ -134,7 +122,6 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
     override fun onPause() {
         super.onPause()
         bluetoothController.unregisterBtReceiver(this)
-        bluetoothController.unregisterBluetoothAdapterReceiver(this)
     }
 
     override fun onDestroy() {
@@ -149,23 +136,6 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
 
     override fun onDisconnected() {
         btn_connect.text = getString(R.string.disconnected)
-    }
-
-    override fun onReceiveData(dat: ByteArray?) {
-        when(selectedDevice) {
-            OXYMETER -> dataParser.add(dat!!)
-            TONOMETER -> tvParams.text = dat?.contentToString()
-            THERMOMETER -> tvParams.text = getString(R.string.temperature, dataParser.getTemperature(dat!!))
-            SCALES -> tvParams.text = dat?.contentToString()
-        }
-    }
-
-    override fun onCheckPermission() {
-
-    }
-
-    override fun onBluetoothEnabled() {
-
     }
 
     companion object {
