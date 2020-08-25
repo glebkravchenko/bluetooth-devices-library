@@ -8,8 +8,6 @@ import android.content.*
 import android.os.IBinder
 import android.util.Log
 import com.test.emmacarebluetoothdevices.etc.Const
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_RECEIVE
 import com.test.emmacarebluetoothdevices.services.BluetoothService
 import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
 
@@ -34,23 +32,23 @@ class BluetoothController private constructor(private val stateListener: StateLi
      * @param device
      */
     fun connect(device: BluetoothDevice) {
-        bluetoothService!!.connect(device.address)
+        bluetoothService?.connect(device.address)
     }
 
     /**
      * Disconnect the bluetooth
      */
     fun disconnect() {
-        bluetoothService!!.disconnect()
+        bluetoothService?.disconnect()
     }
 
-    private val mServiceConnection: ServiceConnection = object : ServiceConnection {
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(
             componentName: ComponentName,
             service: IBinder
         ) {
             bluetoothService = (service as LocalBinder).service
-            if (!bluetoothService!!.initialize()) {
+            if (!bluetoothService?.initialize()!!) {
                 Log.e(TAG, "Unable to initialize Bluetooth")
             }
         }
@@ -64,13 +62,13 @@ class BluetoothController private constructor(private val stateListener: StateLi
         val gattServiceIntent = Intent(context, BluetoothService::class.java)
         context.bindService(
             gattServiceIntent,
-            mServiceConnection,
+            serviceConnection,
             Context.BIND_AUTO_CREATE
         )
     }
 
     fun unbindService(context: Context) {
-        context.unbindService(mServiceConnection)
+        context.unbindService(serviceConnection)
     }
 
     private val gattUpdateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -90,7 +88,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 BluetoothService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    bluetoothService!!.setCharacteristicNotification(receiveData!!, true)
+                    bluetoothService?.setCharacteristicNotification(receiveData!!, true)
+                    bluetoothService?.writeToDevice(receiveData!!)
                 }
                 BluetoothService.ACTION_DATA_AVAILABLE -> {
                     Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothService.EXTRA_DATA))
@@ -119,8 +118,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
         }
 
     fun initCharacteristic() {
-        val services = bluetoothService!!.supportedGattServices
-        var mDataService: BluetoothGattService? = null
+        val services = bluetoothService?.supportedGattServices
+        var dataService: BluetoothGattService? = null
         if (services == null) {
             return
         }
@@ -131,18 +130,18 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 || service.uuid == Const.SCALES_UUID_SERVICE_DATA
                 || service.uuid == Const.TONOMETER_UUID_SERVICE_DATA
             ) {
-                mDataService = service
+                dataService = service
             }
         }
 
-        if (mDataService != null) {
-            val characteristics = mDataService?.characteristics
+        if (dataService != null) {
+            val characteristics = dataService?.characteristics
             if (characteristics != null) {
                 for (ch in characteristics) {
                     if (ch.uuid == Const.OXYMETER_UUID_CHARACTER_RECEIVE
                         || ch.uuid == Const.THERMOMETER_UUID_CHARACTER_RECEIVE
-                        || ch.uuid == SCALES_UUID_CHARACTER_RECEIVE
-                        || ch.uuid == TONOMETER_UUID_CHARACTER_RECEIVE
+                        || ch.uuid == Const.SCALES_UUID_CHARACTER_RECEIVE
+                        || ch.uuid == Const.TONOMETER_UUID_CHARACTER_RECEIVE
                     ) {
                         receiveData = ch
                     } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME

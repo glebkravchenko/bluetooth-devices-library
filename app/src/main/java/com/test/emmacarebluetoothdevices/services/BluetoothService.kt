@@ -9,7 +9,6 @@ import android.os.IBinder
 import android.util.Log
 import com.test.emmacarebluetoothdevices.etc.Const
 
-
 class BluetoothService : Service() {
 
     private var bluetoothManager: BluetoothManager? = null
@@ -31,7 +30,7 @@ class BluetoothService : Service() {
                 // Attempts to discover services after successful connection.
                 Log.i(
                     TAG,
-                    "Attempting to start service discovery:" + bluetoothGatt!!.discoverServices()
+                    "Attempting to start service discovery:" + bluetoothGatt?.discoverServices()
                 )
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED
@@ -120,7 +119,7 @@ class BluetoothService : Service() {
                 return false
             }
         }
-        bluetoothAdapter = bluetoothManager!!.adapter
+        bluetoothAdapter = bluetoothManager?.adapter
         if (bluetoothAdapter == null) {
             Log.e(TAG, "Unable to obtain a BluetoothAdapter.")
             return false
@@ -134,17 +133,17 @@ class BluetoothService : Service() {
             return false
         }
 
-        // Previously connected device.  Try to reconnect.
+        // Previously connected device. Try to reconnect.
         if (bluetoothDeviceAddress != null && address == bluetoothDeviceAddress && bluetoothGatt != null) {
             Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection.")
-            return if (bluetoothGatt!!.connect()) {
+            return if (bluetoothGatt?.connect()!!) {
                 connectionState = STATE_CONNECTING
                 true
             } else {
                 false
             }
         }
-        val device = bluetoothAdapter!!.getRemoteDevice(address)
+        val device = bluetoothAdapter?.getRemoteDevice(address)
         if (device == null) {
             Log.w(TAG, "Device not found.  Unable to connect.")
             return false
@@ -163,14 +162,14 @@ class BluetoothService : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        bluetoothGatt!!.disconnect()
+        bluetoothGatt?.disconnect()
     }
 
     fun close() {
         if (bluetoothGatt == null) {
             return
         }
-        bluetoothGatt!!.close()
+        bluetoothGatt?.close()
         bluetoothGatt = null
     }
 
@@ -179,7 +178,7 @@ class BluetoothService : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        bluetoothGatt!!.readCharacteristic(characteristic)
+        bluetoothGatt?.readCharacteristic(characteristic)
     }
 
     fun setCharacteristicNotification(
@@ -190,9 +189,8 @@ class BluetoothService : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
-        bluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
+        bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
 
-        // This is specific to Oximeter Data Transfer.
         if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
             || Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
             || Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid
@@ -206,13 +204,21 @@ class BluetoothService : Service() {
             }
 
             bluetoothGatt?.writeDescriptor(descriptor)
-//            writeToDevice(characteristic)
         }
     }
 
-    private fun writeToDevice(characteristic: BluetoothGattCharacteristic) {
+    fun writeToDevice(characteristic: BluetoothGattCharacteristic) {
         when {
             Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
+                write(
+                    characteristic,
+                    byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
+                )
+            }
+            Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
+                write(characteristic, byteArrayOfInts(0xFE, 0xFD))
+            }
+            Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
                 write(
                     characteristic,
                     byteArrayOfInts(
@@ -230,12 +236,6 @@ class BluetoothService : Service() {
                     )
                 )
             }
-            Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                write(characteristic, byteArrayOfInts(0xFE, 0xFD))
-            }
-            Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
-                write(characteristic, byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A))
-            }
         }
     }
 
@@ -243,7 +243,7 @@ class BluetoothService : Service() {
         ByteArray(ints.size) { pos -> ints[pos].toByte() }
 
     val supportedGattServices: List<BluetoothGattService>?
-        get() = if (bluetoothGatt == null) null else bluetoothGatt!!.services
+        get() = if (bluetoothGatt == null) null else bluetoothGatt?.services
 
     private fun write(ch: BluetoothGattCharacteristic, bytes: ByteArray) {
         var byteOffset = 0
@@ -257,14 +257,15 @@ class BluetoothService : Service() {
                 TRANSFER_PACKAGE_SIZE
             )
             ch.value = b
-            bluetoothGatt!!.writeCharacteristic(ch)
+            bluetoothGatt?.writeCharacteristic(ch)
             byteOffset += TRANSFER_PACKAGE_SIZE
         }
+
         if (bytes.size - byteOffset != 0) {
             val b = ByteArray(bytes.size - byteOffset)
             System.arraycopy(bytes, byteOffset, b, 0, bytes.size - byteOffset)
             ch.value = b
-            bluetoothGatt!!.writeCharacteristic(ch)
+            bluetoothGatt?.writeCharacteristic(ch)
             Log.w(TAG, "Wrote ${bytes.size} bytes")
         }
     }

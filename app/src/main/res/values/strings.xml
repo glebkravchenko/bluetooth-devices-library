@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">EmmaCareBluetoothDevices</string>
 
-    <string name="search_oximeters">Search</string>
+    <string name="connect">Connect</string>
     <string name="spot_and_pulse">SpO2: %d Pulse Rate: %d</string>
     <string name="disconnected">Disconnected</string>
     <string name="connected">Connected</string>
