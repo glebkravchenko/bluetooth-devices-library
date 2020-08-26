@@ -10,6 +10,14 @@ import androidx.appcompat.app.AppCompatActivity
 import c.tlgbltcn.library.BluetoothHelper
 import c.tlgbltcn.library.BluetoothHelperListener
 import com.test.emmacarebluetoothdevices.R
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_OXYMETER
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_SCALE
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_THERMOMETER
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_TONOMETER
+import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
+import com.test.emmacarebluetoothdevices.etc.Const.SCALES
+import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
+import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
 import com.test.emmacarebluetoothdevices.etc.DataParser
 import com.test.emmacarebluetoothdevices.services.controller.BluetoothController
 import kotlinx.android.synthetic.main.activity_main.*
@@ -141,19 +149,5 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
 
     override fun onDisconnected() {
         btn_connect.text = getString(R.string.disconnected)
-    }
-
-    companion object {
-        private  val TAG = MainActivity::class.java.simpleName
-
-        const val TONOMETER = "Tonometer"
-        const val OXYMETER = "Oxymeter"
-        const val SCALES = "Scales"
-        const val THERMOMETER = "Thermometer"
-
-        private const val NAME_OXYMETER = "BerryMed"
-        private const val NAME_TONOMETER = "Bluetooth BP"
-        private const val NAME_THERMOMETER = "Comper IR-FT-EECE5C281FCA"
-        private const val NAME_SCALE = "Health Scale"
     }
 }
