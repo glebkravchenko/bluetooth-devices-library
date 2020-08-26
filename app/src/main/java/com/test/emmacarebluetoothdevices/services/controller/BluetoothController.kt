@@ -85,13 +85,10 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 BluetoothService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    bluetoothService?.setCharacteristicNotification(receiveData!!, true)
+                    bluetoothService?.setCharacteristicNotification(receiveData!!)
                     bluetoothService?.writeToDevice(receiveData!!)
                 }
                 BluetoothService.ACTION_DATA_AVAILABLE -> {
-                    Log.e(TAG, "onReceive: " + intent.getStringExtra(BluetoothService.EXTRA_DATA))
-                }
-                BluetoothService.ACTION_SPO2_DATA_AVAILABLE -> {
                     val data = intent.getByteArrayExtra(BluetoothService.EXTRA_DATA)
                     stateListener.onReceiveData(data)
                 }
@@ -126,14 +123,12 @@ class BluetoothController private constructor(private val stateListener: StateLi
                         || ch.uuid == Const.TONOMETER_UUID_CHARACTER_RECEIVE
                     ) {
                         receiveData = ch
-                        receiveData?.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                     } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.THERMOMETER_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.SCALES_UUID_MODIFY_BT_NAME
                         || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME
                     ) {
                         modifyName = ch
-                        modifyName?.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                     }
                 }
             }
@@ -172,7 +167,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
             intentFilter.addAction(BluetoothService.ACTION_GATT_DISCONNECTED)
             intentFilter.addAction(BluetoothService.ACTION_GATT_SERVICES_DISCOVERED)
             intentFilter.addAction(BluetoothService.ACTION_DATA_AVAILABLE)
-            intentFilter.addAction(BluetoothService.ACTION_SPO2_DATA_AVAILABLE)
             return intentFilter
         }
     }

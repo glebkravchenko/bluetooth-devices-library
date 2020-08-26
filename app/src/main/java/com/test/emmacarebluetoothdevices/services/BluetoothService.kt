@@ -56,13 +56,19 @@ class BluetoothService : Service() {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
             }
+
+            val value = characteristic.value
+            Log.e(TAG, "onCharacteristicRead, Value: ${value!!.contentToString()}")
         }
 
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            broadcastUpdate(ACTION_SPO2_DATA_AVAILABLE, characteristic)
+            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+
+            val value = characteristic.value
+            Log.e(TAG, "onCharacteristicChanged, Value: ${value!!.contentToString()}")
         }
     }
 
@@ -164,7 +170,7 @@ class BluetoothService : Service() {
         bluetoothGatt?.disconnect()
     }
 
-    fun close() {
+    private fun close() {
         if (bluetoothGatt == null) {
             return
         }
@@ -180,29 +186,21 @@ class BluetoothService : Service() {
         bluetoothGatt?.readCharacteristic(characteristic)
     }
 
-    fun setCharacteristicNotification(
-        characteristic: BluetoothGattCharacteristic,
-        enabled: Boolean
-    ) {
+    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic) {
         if (bluetoothAdapter == null || bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
 
-        bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
-
+        bluetoothGatt?.setCharacteristicNotification(characteristic, true)
         if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
             || Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
             || Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid
             || Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
         ) {
             val descriptor = characteristic.getDescriptor(Const.UUID_CLIENT_CHARACTER_CONFIG)
-            if (enabled) {
-                descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            } else {
-                descriptor.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-            }
-
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+//            descriptor.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
             bluetoothGatt?.writeDescriptor(descriptor)
         }
     }
@@ -212,7 +210,7 @@ class BluetoothService : Service() {
             Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
                 writeCharacteristic(
                     characteristic,
-                    byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0X0D, 0x0A)
+                    byteArrayOfInts(0xFD, 0xFD)
                 )
             }
             Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
@@ -261,7 +259,6 @@ class BluetoothService : Service() {
         const val ACTION_GATT_SERVICES_DISCOVERED =
             "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
         const val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
-        const val ACTION_SPO2_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_SPO2_DATA_AVAILABLE"
         const val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
     }
 }
