@@ -102,7 +102,12 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
     override fun onReceiveData(dat: ByteArray?) {
         when(selectedDevice) {
             OXYMETER -> dataParser.add(dat!!)
-            TONOMETER -> tvParams.text = dat?.contentToString()
+            TONOMETER -> {
+                when (dat?.size) {
+                    7 -> tvParams.text = getString(R.string.pulse, dat[4])
+                    8 -> tvParams.text = getString(R.string.blood_pressure, dat[3], dat[4], dat[5])
+                }
+            }
             THERMOMETER -> tvParams.text = getString(R.string.temperature, dataParser.getTemperature(dat!!))
             SCALES -> tvParams.text = dat?.contentToString()
         }
