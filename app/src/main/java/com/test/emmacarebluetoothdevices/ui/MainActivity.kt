@@ -92,10 +92,10 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
 
     override fun getBluetoothDeviceList(device: BluetoothDevice) {
         when(selectedDevice) {
-            OXYMETER -> if(device.name == NAME_OXYMETER) { bluetoothController.connect(device) }
-            TONOMETER -> if(device.name == NAME_TONOMETER) { bluetoothController.connect(device) }
-            THERMOMETER -> if(device.name == NAME_THERMOMETER) { bluetoothController.connect(device) }
-            SCALES -> if(device.name == NAME_SCALE) { bluetoothController.connect(device) }
+            OXYMETER -> if(device.name == NAME_OXYMETER) { bluetoothController.connect(device, selectedDevice!!) }
+            TONOMETER -> if(device.name == NAME_TONOMETER) { bluetoothController.connect(device, selectedDevice!!) }
+            THERMOMETER -> if(device.name == NAME_THERMOMETER) { bluetoothController.connect(device, selectedDevice!!) }
+            SCALES -> if(device.name == NAME_SCALE) { bluetoothController.connect(device, selectedDevice!!) }
         }
     }
 
@@ -146,10 +146,10 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
     companion object {
         private  val TAG = MainActivity::class.java.simpleName
 
-        private const val TONOMETER = "Tonometer"
-        private const val OXYMETER = "Oxymeter"
-        private const val SCALES = "Scales"
-        private const val THERMOMETER = "Thermometer"
+        const val TONOMETER = "Tonometer"
+        const val OXYMETER = "Oxymeter"
+        const val SCALES = "Scales"
+        const val THERMOMETER = "Thermometer"
 
         private const val NAME_OXYMETER = "BerryMed"
         private const val NAME_TONOMETER = "Bluetooth BP"

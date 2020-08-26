@@ -9,6 +9,7 @@ import android.util.Log
 import com.test.emmacarebluetoothdevices.etc.Const
 import com.test.emmacarebluetoothdevices.services.BluetoothService
 import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
+import com.test.emmacarebluetoothdevices.ui.MainActivity
 
 class BluetoothController private constructor(private val stateListener: StateListener) {
 
@@ -21,6 +22,7 @@ class BluetoothController private constructor(private val stateListener: StateLi
     private var bluetoothService: BluetoothService? = null
     private var receiveData: BluetoothGattCharacteristic? = null
     private var modifyName: BluetoothGattCharacteristic? = null
+    private var selectedDeviceGlobal: String? = null
     var isConnected = false
 
     /**
@@ -28,7 +30,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
      *
      * @param device
      */
-    fun connect(device: BluetoothDevice) {
+    fun connect(device: BluetoothDevice, selectedDevice: String) {
+        selectedDeviceGlobal = selectedDevice
         bluetoothService?.connect(device.address)
     }
 
@@ -85,8 +88,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 BluetoothService.ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    bluetoothService?.setCharacteristicNotification(receiveData!!)
-                    bluetoothService?.writeToDevice(receiveData!!)
+                    bluetoothService?.setCharacteristicNotification(receiveData!!, selectedDeviceGlobal!!)
+                    bluetoothService?.writeToDevice(receiveData!!, selectedDeviceGlobal!!)
                 }
                 BluetoothService.ACTION_DATA_AVAILABLE -> {
                     val data = intent.getByteArrayExtra(BluetoothService.EXTRA_DATA)
@@ -104,10 +107,10 @@ class BluetoothController private constructor(private val stateListener: StateLi
         }
 
         services.forEach { service ->
-            if (service.uuid == Const.OXYMETER_UUID_SERVICE_DATA
-                || service.uuid == Const.THERMOMETER_UUID_SERVICE_DATA
-                || service.uuid == Const.SCALES_UUID_SERVICE_DATA
-                || service.uuid == Const.TONOMETER_UUID_SERVICE_DATA
+            if (service.uuid == Const.OXYMETER_UUID_SERVICE_DATA && selectedDeviceGlobal == MainActivity.OXYMETER
+                || service.uuid == Const.THERMOMETER_UUID_SERVICE_DATA && selectedDeviceGlobal == MainActivity.THERMOMETER
+                || service.uuid == Const.SCALES_UUID_SERVICE_DATA && selectedDeviceGlobal == MainActivity.SCALES
+                || service.uuid == Const.TONOMETER_UUID_SERVICE_DATA && selectedDeviceGlobal == MainActivity.TONOMETER
             ) {
                 dataService = service
             }
@@ -117,16 +120,16 @@ class BluetoothController private constructor(private val stateListener: StateLi
             val characteristics = dataService?.characteristics
             if (characteristics != null) {
                 for (ch in characteristics) {
-                    if (ch.uuid == Const.OXYMETER_UUID_CHARACTER_RECEIVE
-                        || ch.uuid == Const.THERMOMETER_UUID_CHARACTER_RECEIVE
-                        || ch.uuid == Const.SCALES_UUID_CHARACTER_RECEIVE
-                        || ch.uuid == Const.TONOMETER_UUID_CHARACTER_RECEIVE
+                    if (ch.uuid == Const.OXYMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == MainActivity.OXYMETER
+                        || ch.uuid == Const.THERMOMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == MainActivity.THERMOMETER
+                        || ch.uuid == Const.SCALES_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == MainActivity.SCALES
+                        || ch.uuid == Const.TONOMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == MainActivity.TONOMETER
                     ) {
                         receiveData = ch
-                    } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME
-                        || ch.uuid == Const.THERMOMETER_UUID_MODIFY_BT_NAME
-                        || ch.uuid == Const.SCALES_UUID_MODIFY_BT_NAME
-                        || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME
+                    } else if (ch.uuid == Const.OXYMETER_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == MainActivity.OXYMETER
+                        || ch.uuid == Const.THERMOMETER_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == MainActivity.THERMOMETER
+                        || ch.uuid == Const.SCALES_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == MainActivity.SCALES
+                        || ch.uuid == Const.TONOMETER_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == MainActivity.TONOMETER
                     ) {
                         modifyName = ch
                     }

@@ -8,6 +8,8 @@ import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import com.test.emmacarebluetoothdevices.etc.Const
+import com.test.emmacarebluetoothdevices.ui.MainActivity
+
 
 class BluetoothService : Service() {
 
@@ -186,51 +188,43 @@ class BluetoothService : Service() {
         bluetoothGatt?.readCharacteristic(characteristic)
     }
 
-    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic) {
+    fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic, selectedDevice: String) {
         if (bluetoothAdapter == null || bluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
 
         bluetoothGatt?.setCharacteristicNotification(characteristic, true)
-        if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
-            || Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
-            || Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid
-            || Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid
+        if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.OXYMETER
+            || Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.THERMOMETER
+            || Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.SCALES
+            || Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.TONOMETER
         ) {
             val descriptor = characteristic.getDescriptor(Const.UUID_CLIENT_CHARACTER_CONFIG)
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-//            descriptor.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
             bluetoothGatt?.writeDescriptor(descriptor)
         }
     }
 
-    fun writeToDevice(characteristic: BluetoothGattCharacteristic) {
+    fun writeToDevice(characteristic: BluetoothGattCharacteristic, selectedDevice: String) {
+        val tonometer = Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.TONOMETER
+        val thermometer = Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.THERMOMETER
+        val scales = Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == MainActivity.SCALES
         when {
-            Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
+            tonometer -> {
                 writeCharacteristic(
                     characteristic,
                     byteArrayOfInts(0xFD, 0xFD)
                 )
             }
-            Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
+            thermometer -> {
                 writeCharacteristic(characteristic, byteArrayOfInts(0xFE, 0xFD))
             }
-            Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid -> {
+            scales -> {
                 writeCharacteristic(
                     characteristic,
                     byteArrayOfInts(
-                        0xFD,
-                        0x37,
-                        0x01,
-                        0x00,
-                        0x00,
-                        0x00,
-                        0x00,
-                        0x00,
-                        0x00,
-                        0x00,
-                        0xCB
+                        0xFD, 0x37, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCB
                     )
                 )
             }
