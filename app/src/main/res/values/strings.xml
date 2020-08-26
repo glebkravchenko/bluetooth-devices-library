@@ -1,10 +1,13 @@
 <resources>
     <string name="app_name">EmmaCareBluetoothDevices</string>
 
-    <string name="search_oximeters">Search</string>
+    <string name="connect">Connect</string>
     <string name="spot_and_pulse">SpO2: %d Pulse Rate: %d</string>
     <string name="disconnected">Disconnected</string>
     <string name="connected">Connected</string>
     <string name="bluetooth_devices">Bluetooth Devices</string>
+    <string name="temperature">Temperature: %d</string>
+    <string name="blood_pressure">SYS: %d\nDIA: %d\nPULSE: %d</string>
+    <string name="pulse">PULSE: %d</string>
 
 </resources>

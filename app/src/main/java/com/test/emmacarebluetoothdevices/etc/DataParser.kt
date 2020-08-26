@@ -100,6 +100,13 @@ class DataParser(private val mPackageReceivedListener: PackageReceivedListener) 
         return x.toInt() and 0xff
     }
 
+    fun getTemperature(dataArray: ByteArray) : Int {
+        val first = dataArray[8].toInt() and 0xff
+        val second = dataArray[9].toInt() and 0xff
+        val hex = first.times(second)
+        return hex.div(100)
+    }
+
     /**
      * a small collection of Oximeter parameters.
      * you can add more parameters as the manual.
