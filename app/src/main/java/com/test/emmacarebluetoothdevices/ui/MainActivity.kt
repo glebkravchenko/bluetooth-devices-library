@@ -10,6 +10,14 @@ import androidx.appcompat.app.AppCompatActivity
 import c.tlgbltcn.library.BluetoothHelper
 import c.tlgbltcn.library.BluetoothHelperListener
 import com.test.emmacarebluetoothdevices.R
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_OXYMETER
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_SCALE
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_THERMOMETER
+import com.test.emmacarebluetoothdevices.etc.Const.NAME_TONOMETER
+import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
+import com.test.emmacarebluetoothdevices.etc.Const.SCALES
+import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
+import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
 import com.test.emmacarebluetoothdevices.etc.DataParser
 import com.test.emmacarebluetoothdevices.services.controller.BluetoothController
 import kotlinx.android.synthetic.main.activity_main.*
@@ -92,10 +100,10 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
 
     override fun getBluetoothDeviceList(device: BluetoothDevice) {
         when(selectedDevice) {
-            OXYMETER -> if(device.name == NAME_OXYMETER) { bluetoothController.connect(device) }
-            TONOMETER -> if(device.name == NAME_TONOMETER) { bluetoothController.connect(device) }
-            THERMOMETER -> if(device.name == NAME_THERMOMETER) { bluetoothController.connect(device) }
-            SCALES -> if(device.name == NAME_SCALE) { bluetoothController.connect(device) }
+            OXYMETER -> if(device.name == NAME_OXYMETER) { bluetoothController.connect(device, selectedDevice!!) }
+            TONOMETER -> if(device.name == NAME_TONOMETER) { bluetoothController.connect(device, selectedDevice!!) }
+            THERMOMETER -> if(device.name == NAME_THERMOMETER) { bluetoothController.connect(device, selectedDevice!!) }
+            SCALES -> if(device.name == NAME_SCALE) { bluetoothController.connect(device, selectedDevice!!) }
         }
     }
 
@@ -141,19 +149,5 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
 
     override fun onDisconnected() {
         btn_connect.text = getString(R.string.disconnected)
-    }
-
-    companion object {
-        private  val TAG = MainActivity::class.java.simpleName
-
-        private const val TONOMETER = "Tonometer"
-        private const val OXYMETER = "Oxymeter"
-        private const val SCALES = "Scales"
-        private const val THERMOMETER = "Thermometer"
-
-        private const val NAME_OXYMETER = "BerryMed"
-        private const val NAME_TONOMETER = "Bluetooth BP"
-        private const val NAME_THERMOMETER = "Comper IR-FT-EECE5C281FCA"
-        private const val NAME_SCALE = "Health Scale"
     }
 }
