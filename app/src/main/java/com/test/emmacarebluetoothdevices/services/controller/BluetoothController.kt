@@ -13,19 +13,15 @@ import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_SERVICES_DISCOVER
 import com.test.emmacarebluetoothdevices.etc.Const.EXTRA_DATA
 import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
 import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_MODIFY_BT_NAME
 import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_SERVICE_DATA
 import com.test.emmacarebluetoothdevices.etc.Const.SCALES
 import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_MODIFY_BT_NAME
 import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_SERVICE_DATA
 import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
 import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_MODIFY_BT_NAME
 import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_SERVICE_DATA
 import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
 import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_MODIFY_BT_NAME
 import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_SERVICE_DATA
 import com.test.emmacarebluetoothdevices.services.BluetoothService
 import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
@@ -40,7 +36,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
 
     private var bluetoothService: BluetoothService? = null
     private var receiveData: BluetoothGattCharacteristic? = null
-    private var modifyName: BluetoothGattCharacteristic? = null
     private var selectedDeviceGlobal: String? = null
     var isConnected = false
 
@@ -100,7 +95,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 }
                 ACTION_GATT_DISCONNECTED -> {
                     stateListener.onDisconnected()
-                    modifyName = null
                     receiveData = null
                     isConnected = false
                 }
@@ -145,12 +139,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
                         || ch.uuid == TONOMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == TONOMETER
                     ) {
                         receiveData = ch
-                    } else if (ch.uuid == OXYMETER_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == OXYMETER
-                        || ch.uuid == THERMOMETER_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == THERMOMETER
-                        || ch.uuid == SCALES_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == SCALES
-                        || ch.uuid == TONOMETER_UUID_MODIFY_BT_NAME && selectedDeviceGlobal == TONOMETER
-                    ) {
-                        modifyName = ch
                     }
                 }
             }
