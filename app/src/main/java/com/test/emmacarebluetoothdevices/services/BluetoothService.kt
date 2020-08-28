@@ -20,6 +20,16 @@ import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
 
 class BluetoothService : Service() {
 
+    private val WRITE_START_TONOMETER = byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
+    private val WRITE_START_THERMOMETER = byteArrayOfInts(0xFE, 0xFD)
+    private val WRITE_START_SCALES =
+        byteArrayOfInts(0xFD, 0x37, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCB)
+    private val WRITE_END_TONOMETER = byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
+    private val WRITE_END_THERMOMETER = byteArrayOfInts(0x0D, 0x0A)
+    private val WRITE_END_SCALES =
+        byteArrayOfInts(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x00, 0x00)
+
+
     private var bluetoothManager: BluetoothManager? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothDeviceAddress: String? = null
@@ -87,7 +97,7 @@ class BluetoothService : Service() {
     }
 
     private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
-        if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid) {
+        if (Const.OXYMETER_UUID_CHARACTER_NOTIFY == characteristic.uuid) {
             val spo2Intent = Intent(action)
             val data = characteristic.value
             for (b in data) {
@@ -205,10 +215,10 @@ class BluetoothService : Service() {
         }
 
         bluetoothGatt?.setCharacteristicNotification(characteristic, true)
-        if (Const.OXYMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == OXYMETER
-            || Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == THERMOMETER
-            || Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == SCALES
-            || Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == TONOMETER
+        if (Const.OXYMETER_UUID_CHARACTER_NOTIFY == characteristic.uuid && selectedDevice == OXYMETER
+            || Const.THERMOMETER_UUID_CHARACTER_NOTIFY == characteristic.uuid && selectedDevice == THERMOMETER
+            || Const.SCALES_UUID_CHARACTER_NOTIFY == characteristic.uuid && selectedDevice == SCALES
+            || Const.TONOMETER_UUID_CHARACTER_NOTIFY == characteristic.uuid && selectedDevice == TONOMETER
         ) {
             val descriptor = characteristic.getDescriptor(Const.UUID_CLIENT_CHARACTER_CONFIG)
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -216,31 +226,35 @@ class BluetoothService : Service() {
         }
     }
 
-    fun writeToDevice(characteristic: BluetoothGattCharacteristic, selectedDevice: String) {
-        val tonometer =
-            Const.TONOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == TONOMETER
-        val thermometer =
-            Const.THERMOMETER_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == THERMOMETER
-        val scales =
-            Const.SCALES_UUID_CHARACTER_RECEIVE == characteristic.uuid && selectedDevice == SCALES
+    fun writeToStartMeasurement(
+        characteristic: BluetoothGattCharacteristic,
+        selectedDevice: String
+    ) {
         when {
-            tonometer -> {
-                writeCharacteristic(
-                    characteristic,
-                    byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
-                )
+            isWriteTonometer(characteristic, selectedDevice) ->
+                writeCharacteristic(characteristic, WRITE_START_TONOMETER)
+            isWriteThermometer(characteristic, selectedDevice) ->
+                writeCharacteristic(characteristic, WRITE_START_THERMOMETER)
+            isWriteScales(characteristic, selectedDevice) ->
+                writeCharacteristic(characteristic, WRITE_START_SCALES)
+        }
+    }
+
+    fun writeToEndMeasurement(
+        characteristic: BluetoothGattCharacteristic,
+        selectedDevice: String,
+        data: ByteArray?
+    ) {
+        when {
+            isWriteTonometer(characteristic, selectedDevice) -> {
+                if (data?.size == 8) {
+                    writeCharacteristic(characteristic, WRITE_END_TONOMETER)
+                }
             }
-            thermometer -> {
-                writeCharacteristic(characteristic, byteArrayOfInts(0xFE, 0xFD))
-            }
-            scales -> {
-                writeCharacteristic(
-                    characteristic,
-                    byteArrayOfInts(
-                        0xFD, 0x37, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCB
-                    )
-                )
-            }
+            isWriteThermometer(characteristic, selectedDevice) ->
+                writeCharacteristic(characteristic, WRITE_END_THERMOMETER)
+            isWriteScales(characteristic, selectedDevice) ->
+                writeCharacteristic(characteristic, WRITE_END_SCALES)
         }
     }
 
@@ -249,6 +263,21 @@ class BluetoothService : Service() {
         bluetoothGatt?.writeCharacteristic(characteristic)
         Log.w(TAG, "Wrote ${value.size} bytes")
     }
+
+    private fun isWriteTonometer(
+        characteristic: BluetoothGattCharacteristic,
+        selectedDevice: String
+    ) =
+        Const.TONOMETER_UUID_CHARACTER_WRITE == characteristic.uuid && selectedDevice == TONOMETER
+
+    private fun isWriteThermometer(
+        characteristic: BluetoothGattCharacteristic,
+        selectedDevice: String
+    ) =
+        Const.THERMOMETER_UUID_CHARACTER_WRITE == characteristic.uuid && selectedDevice == THERMOMETER
+
+    private fun isWriteScales(characteristic: BluetoothGattCharacteristic, selectedDevice: String) =
+        Const.SCALES_UUID_CHARACTER_WRITE == characteristic.uuid && selectedDevice == SCALES
 
     private fun byteArrayOfInts(vararg ints: Int) =
         ByteArray(ints.size) { pos -> ints[pos].toByte() }

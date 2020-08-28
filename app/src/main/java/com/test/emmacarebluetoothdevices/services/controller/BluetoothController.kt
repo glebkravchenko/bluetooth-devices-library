@@ -12,17 +12,21 @@ import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_DISCONNECTED
 import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_SERVICES_DISCOVERED
 import com.test.emmacarebluetoothdevices.etc.Const.EXTRA_DATA
 import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_SERVICE_DATA
+import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_CHARACTER_NOTIFY
+import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_CHARACTER_WRITE
+import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_SERVICE
 import com.test.emmacarebluetoothdevices.etc.Const.SCALES
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_SERVICE_DATA
+import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_NOTIFY
+import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_WRITE
+import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_SERVICE
 import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_SERVICE_DATA
+import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_CHARACTER_NOTIFY
+import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_CHARACTER_WRITE
+import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_SERVICE
 import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_RECEIVE
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_SERVICE_DATA
+import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_NOTIFY
+import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_WRITE
+import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_SERVICE
 import com.test.emmacarebluetoothdevices.services.BluetoothService
 import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
 
@@ -35,7 +39,8 @@ class BluetoothController private constructor(private val stateListener: StateLi
     }
 
     private var bluetoothService: BluetoothService? = null
-    private var receiveData: BluetoothGattCharacteristic? = null
+    private var notifyCharacteristic: BluetoothGattCharacteristic? = null
+    private var writeCharacteristic: BluetoothGattCharacteristic? = null
     private var selectedDeviceGlobal: String? = null
     var isConnected = false
 
@@ -95,17 +100,18 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 }
                 ACTION_GATT_DISCONNECTED -> {
                     stateListener.onDisconnected()
-                    receiveData = null
+                    notifyCharacteristic = null
                     isConnected = false
                 }
                 ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    bluetoothService?.setCharacteristicNotification(receiveData!!, selectedDeviceGlobal!!)
-                    bluetoothService?.writeToDevice(receiveData!!, selectedDeviceGlobal!!)
+                    bluetoothService?.setCharacteristicNotification(notifyCharacteristic!!, selectedDeviceGlobal!!)
+                    bluetoothService?.writeToStartMeasurement(writeCharacteristic!!, selectedDeviceGlobal!!)
                 }
                 ACTION_DATA_AVAILABLE -> {
                     val data = intent.getByteArrayExtra(EXTRA_DATA)
+                    bluetoothService?.writeToEndMeasurement(writeCharacteristic!!, selectedDeviceGlobal!!, data)
                     stateListener.onReceiveData(data)
                 }
             }
@@ -120,10 +126,10 @@ class BluetoothController private constructor(private val stateListener: StateLi
         }
 
         services.forEach { service ->
-            if (service.uuid == OXYMETER_UUID_SERVICE_DATA && selectedDeviceGlobal == OXYMETER
-                || service.uuid == THERMOMETER_UUID_SERVICE_DATA && selectedDeviceGlobal == THERMOMETER
-                || service.uuid == SCALES_UUID_SERVICE_DATA && selectedDeviceGlobal == SCALES
-                || service.uuid == TONOMETER_UUID_SERVICE_DATA && selectedDeviceGlobal == TONOMETER
+            if (service.uuid == OXYMETER_UUID_SERVICE && selectedDeviceGlobal == OXYMETER
+                || service.uuid == THERMOMETER_UUID_SERVICE && selectedDeviceGlobal == THERMOMETER
+                || service.uuid == SCALES_UUID_SERVICE && selectedDeviceGlobal == SCALES
+                || service.uuid == TONOMETER_UUID_SERVICE && selectedDeviceGlobal == TONOMETER
             ) {
                 dataService = service
             }
@@ -132,13 +138,19 @@ class BluetoothController private constructor(private val stateListener: StateLi
         if (dataService != null) {
             val characteristics = dataService?.characteristics
             if (characteristics != null) {
-                for (ch in characteristics) {
-                    if (ch.uuid == OXYMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == OXYMETER
-                        || ch.uuid == THERMOMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == THERMOMETER
-                        || ch.uuid == SCALES_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == SCALES
-                        || ch.uuid == TONOMETER_UUID_CHARACTER_RECEIVE && selectedDeviceGlobal == TONOMETER
+                for (gattCharacteristic in characteristics) {
+                    if (gattCharacteristic.uuid == OXYMETER_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == OXYMETER
+                        || gattCharacteristic.uuid == THERMOMETER_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == THERMOMETER
+                        || gattCharacteristic.uuid == SCALES_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == SCALES
+                        || gattCharacteristic.uuid == TONOMETER_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == TONOMETER
                     ) {
-                        receiveData = ch
+                        notifyCharacteristic = gattCharacteristic
+                    } else if (gattCharacteristic.uuid == OXYMETER_UUID_CHARACTER_WRITE && selectedDeviceGlobal == OXYMETER
+                        || gattCharacteristic.uuid == THERMOMETER_UUID_CHARACTER_WRITE && selectedDeviceGlobal == THERMOMETER
+                        || gattCharacteristic.uuid == SCALES_UUID_CHARACTER_WRITE && selectedDeviceGlobal == SCALES
+                        || gattCharacteristic.uuid == TONOMETER_UUID_CHARACTER_WRITE && selectedDeviceGlobal == TONOMETER
+                    ) {
+                        writeCharacteristic = gattCharacteristic
                     }
                 }
             }
