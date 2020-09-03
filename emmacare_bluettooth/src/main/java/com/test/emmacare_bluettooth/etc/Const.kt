@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.etc
+package com.test.emmacare_bluettooth.etc
 
 import java.util.*
 

@@ -1,2 +1,3 @@
+include ':emmacare_bluettooth'
 include ':app'
 rootProject.name = "EmmaCareBluetoothDevices"

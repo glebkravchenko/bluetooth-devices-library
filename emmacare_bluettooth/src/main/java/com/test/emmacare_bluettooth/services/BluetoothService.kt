@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.services
+package com.test.emmacare_bluettooth.services
 
 import android.app.Service
 import android.bluetooth.*
@@ -7,16 +7,16 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
-import com.test.emmacarebluetoothdevices.etc.Const
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_DATA_AVAILABLE
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_CONNECTED
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_DISCONNECTED
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_SERVICES_DISCOVERED
-import com.test.emmacarebluetoothdevices.etc.Const.EXTRA_DATA
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
+import com.test.emmacare_bluettooth.etc.Const
+import com.test.emmacare_bluettooth.etc.Const.ACTION_DATA_AVAILABLE
+import com.test.emmacare_bluettooth.etc.Const.ACTION_GATT_CONNECTED
+import com.test.emmacare_bluettooth.etc.Const.ACTION_GATT_DISCONNECTED
+import com.test.emmacare_bluettooth.etc.Const.ACTION_GATT_SERVICES_DISCOVERED
+import com.test.emmacare_bluettooth.etc.Const.EXTRA_DATA
+import com.test.emmacare_bluettooth.etc.Const.OXYMETER
+import com.test.emmacare_bluettooth.etc.Const.SCALES
+import com.test.emmacare_bluettooth.etc.Const.THERMOMETER
+import com.test.emmacare_bluettooth.etc.Const.TONOMETER
 
 class BluetoothService : Service() {
 

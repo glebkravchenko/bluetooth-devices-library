@@ -9,17 +9,17 @@ import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import c.tlgbltcn.library.BluetoothHelper
 import c.tlgbltcn.library.BluetoothHelperListener
+import com.test.emmacare_bluettooth.etc.Const.NAME_OXYMETER
+import com.test.emmacare_bluettooth.etc.Const.NAME_SCALE
+import com.test.emmacare_bluettooth.etc.Const.NAME_THERMOMETER
+import com.test.emmacare_bluettooth.etc.Const.NAME_TONOMETER
+import com.test.emmacare_bluettooth.etc.Const.OXYMETER
+import com.test.emmacare_bluettooth.etc.Const.SCALES
+import com.test.emmacare_bluettooth.etc.Const.THERMOMETER
+import com.test.emmacare_bluettooth.etc.Const.TONOMETER
+import com.test.emmacare_bluettooth.etc.DataParser
+import com.test.emmacare_bluettooth.services.controller.BluetoothController
 import com.test.emmacarebluetoothdevices.R
-import com.test.emmacarebluetoothdevices.etc.Const.NAME_OXYMETER
-import com.test.emmacarebluetoothdevices.etc.Const.NAME_SCALE
-import com.test.emmacarebluetoothdevices.etc.Const.NAME_THERMOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.NAME_TONOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
-import com.test.emmacarebluetoothdevices.etc.DataParser
-import com.test.emmacarebluetoothdevices.services.controller.BluetoothController
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothController.StateListener {

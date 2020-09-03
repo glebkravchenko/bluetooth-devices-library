@@ -1,4 +1,4 @@
-package com.test.emmacarebluetoothdevices.services.controller
+package com.test.emmacare_bluettooth.services.controller
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
@@ -6,29 +6,29 @@ import android.bluetooth.BluetoothGattService
 import android.content.*
 import android.os.IBinder
 import android.util.Log
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_DATA_AVAILABLE
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_CONNECTED
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_DISCONNECTED
-import com.test.emmacarebluetoothdevices.etc.Const.ACTION_GATT_SERVICES_DISCOVERED
-import com.test.emmacarebluetoothdevices.etc.Const.EXTRA_DATA
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_CHARACTER_NOTIFY
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_CHARACTER_WRITE
-import com.test.emmacarebluetoothdevices.etc.Const.OXYMETER_UUID_SERVICE
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_NOTIFY
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_CHARACTER_WRITE
-import com.test.emmacarebluetoothdevices.etc.Const.SCALES_UUID_SERVICE
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_CHARACTER_NOTIFY
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_CHARACTER_WRITE
-import com.test.emmacarebluetoothdevices.etc.Const.THERMOMETER_UUID_SERVICE
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_NOTIFY
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_CHARACTER_WRITE
-import com.test.emmacarebluetoothdevices.etc.Const.TONOMETER_UUID_SERVICE
-import com.test.emmacarebluetoothdevices.services.BluetoothService
-import com.test.emmacarebluetoothdevices.services.BluetoothService.LocalBinder
+import com.test.emmacare_bluettooth.etc.Const.ACTION_DATA_AVAILABLE
+import com.test.emmacare_bluettooth.etc.Const.ACTION_GATT_CONNECTED
+import com.test.emmacare_bluettooth.etc.Const.ACTION_GATT_DISCONNECTED
+import com.test.emmacare_bluettooth.etc.Const.ACTION_GATT_SERVICES_DISCOVERED
+import com.test.emmacare_bluettooth.etc.Const.EXTRA_DATA
+import com.test.emmacare_bluettooth.etc.Const.OXYMETER
+import com.test.emmacare_bluettooth.etc.Const.OXYMETER_UUID_CHARACTER_NOTIFY
+import com.test.emmacare_bluettooth.etc.Const.OXYMETER_UUID_CHARACTER_WRITE
+import com.test.emmacare_bluettooth.etc.Const.OXYMETER_UUID_SERVICE
+import com.test.emmacare_bluettooth.etc.Const.SCALES
+import com.test.emmacare_bluettooth.etc.Const.SCALES_UUID_CHARACTER_NOTIFY
+import com.test.emmacare_bluettooth.etc.Const.SCALES_UUID_CHARACTER_WRITE
+import com.test.emmacare_bluettooth.etc.Const.SCALES_UUID_SERVICE
+import com.test.emmacare_bluettooth.etc.Const.THERMOMETER
+import com.test.emmacare_bluettooth.etc.Const.THERMOMETER_UUID_CHARACTER_NOTIFY
+import com.test.emmacare_bluettooth.etc.Const.THERMOMETER_UUID_CHARACTER_WRITE
+import com.test.emmacare_bluettooth.etc.Const.THERMOMETER_UUID_SERVICE
+import com.test.emmacare_bluettooth.etc.Const.TONOMETER
+import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_CHARACTER_NOTIFY
+import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_CHARACTER_WRITE
+import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_SERVICE
+import com.test.emmacare_bluettooth.services.BluetoothService
+import com.test.emmacare_bluettooth.services.BluetoothService.LocalBinder
 
 class BluetoothController private constructor(private val stateListener: StateListener) {
 
