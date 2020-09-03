@@ -6,7 +6,7 @@
     <string name="disconnected">Disconnected</string>
     <string name="connected">Connected</string>
     <string name="bluetooth_devices">Bluetooth Devices</string>
-    <string name="temperature">Temperature: %d</string>
+    <string name="temperature">Temperature: %s</string>
     <string name="blood_pressure">SYS: %d\nDIA: %d\nPULSE: %d</string>
     <string name="pulse">PULSE: %d</string>
 

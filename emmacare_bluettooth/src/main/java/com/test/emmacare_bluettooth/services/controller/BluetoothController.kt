@@ -106,12 +106,26 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 ACTION_GATT_SERVICES_DISCOVERED -> {
                     // Show all the supported services and characteristics on the user interface.
                     initCharacteristic()
-                    bluetoothService?.setCharacteristicNotification(notifyCharacteristic!!, selectedDeviceGlobal!!)
-                    bluetoothService?.writeToStartMeasurement(writeCharacteristic!!, selectedDeviceGlobal!!)
+                    notifyCharacteristic?.let { gattCharacteristic ->
+                        bluetoothService?.setCharacteristicNotification(
+                            gattCharacteristic,
+                            selectedDeviceGlobal.toString()
+                        )
+                    }
+                    writeCharacteristic?.let { gattCharacteristic ->
+                        bluetoothService?.writeToStartMeasurement(
+                            gattCharacteristic,
+                            selectedDeviceGlobal.toString()
+                        )
+                    }
                 }
                 ACTION_DATA_AVAILABLE -> {
                     val data = intent.getByteArrayExtra(EXTRA_DATA)
-                    bluetoothService?.writeToEndMeasurement(writeCharacteristic!!, selectedDeviceGlobal!!, data)
+                    writeCharacteristic?.let { gattCharacteristic ->
+                        selectedDeviceGlobal?.let { device ->
+                            bluetoothService?.writeToEndMeasurement(gattCharacteristic, device, data)
+                        }
+                    }
                     stateListener.onReceiveData(data)
                 }
             }

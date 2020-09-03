@@ -21,11 +21,13 @@ import com.test.emmacare_bluettooth.etc.Const.TONOMETER
 class BluetoothService : Service() {
 
     private val WRITE_START_TONOMETER = byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
-    private val WRITE_START_THERMOMETER = byteArrayOfInts(0xFE, 0xFD)
+    private val WRITE_START_THERMOMETER =
+        byteArrayOfInts(0xFE, 0xFD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x15, 0x0D, 0x0A)
     private val WRITE_START_SCALES =
         byteArrayOfInts(0xFD, 0x37, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCB)
     private val WRITE_END_TONOMETER = byteArrayOfInts(0xFD, 0xFD, 0xFA, 0x05, 0x0D, 0x0A)
-    private val WRITE_END_THERMOMETER = byteArrayOfInts(0x0D, 0x0A)
+    private val WRITE_END_THERMOMETER =
+        byteArrayOfInts(0xFE, 0xFD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x0D, 0x0A)
     private val WRITE_END_SCALES =
         byteArrayOfInts(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x00, 0x00)
 
@@ -77,7 +79,6 @@ class BluetoothService : Service() {
             }
 
             val value = characteristic.value
-            Log.e(TAG, "onCharacteristicRead, Value: ${value!!.contentToString()}")
         }
 
         override fun onCharacteristicChanged(
@@ -87,7 +88,6 @@ class BluetoothService : Service() {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
 
             val value = characteristic.value
-            Log.e(TAG, "onCharacteristicChanged, Value: ${value!!.contentToString()}")
         }
     }
 

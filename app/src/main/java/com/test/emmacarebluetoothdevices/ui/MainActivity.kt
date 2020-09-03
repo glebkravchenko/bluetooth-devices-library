@@ -22,7 +22,9 @@ import com.test.emmacare_bluettooth.services.controller.BluetoothController
 import com.test.emmacarebluetoothdevices.R
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothController.StateListener {
+class MainActivity : AppCompatActivity(), BluetoothHelperListener,
+    BluetoothController.StateListener,
+    DataParser.PackageReceivedListener {
 
     private lateinit var bluetoothHelper: BluetoothHelper
     private lateinit var dataParser: DataParser
@@ -55,14 +57,12 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
     }
 
     private fun setupDataParser() {
-        dataParser = DataParser(object : DataParser.PackageReceivedListener {
-            override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
-                tvParams.text = getString(R.string.spot_and_pulse, params?.spo2, params?.pulseRate)
-            }
-
-            override fun onPlethWaveReceived(amp: Int) {}
-        })
+        dataParser = DataParser(this)
         dataParser.start()
+    }
+
+    override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
+        tvParams.text = getString(R.string.spot_and_pulse, params?.spo2, params?.pulseRate)
     }
 
     private fun setupSpinnerAdapter() {
@@ -72,7 +72,8 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
         devicesList.add(THERMOMETER)
         devicesList.add(SCALES)
 
-        val userAdapter: ArrayAdapter<*> = ArrayAdapter<String>(this, R.layout.item_spinner, devicesList)
+        val userAdapter: ArrayAdapter<*> =
+            ArrayAdapter<String>(this, R.layout.item_spinner, devicesList)
         spinner.adapter = userAdapter
         spinner.onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(
@@ -90,33 +91,48 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener, BluetoothCont
         }
     }
 
-    override fun onStartDiscovery() { }
+    override fun onStartDiscovery() {}
 
-    override fun onFinishDiscovery() { }
+    override fun onFinishDiscovery() {}
 
-    override fun onEnabledBluetooth() { }
+    override fun onEnabledBluetooth() {}
 
-    override fun onDisabledBluetooh() { }
+    override fun onDisabledBluetooh() {}
 
     override fun getBluetoothDeviceList(device: BluetoothDevice) {
-        when(selectedDevice) {
-            OXYMETER -> if(device.name == NAME_OXYMETER) { bluetoothController.connect(device, selectedDevice!!) }
-            TONOMETER -> if(device.name == NAME_TONOMETER) { bluetoothController.connect(device, selectedDevice!!) }
-            THERMOMETER -> if(device.name == NAME_THERMOMETER) { bluetoothController.connect(device, selectedDevice!!) }
-            SCALES -> if(device.name == NAME_SCALE) { bluetoothController.connect(device, selectedDevice!!) }
+        when (selectedDevice) {
+            OXYMETER -> if (device.name == NAME_OXYMETER) {
+                bluetoothController.connect(device, selectedDevice.toString())
+            }
+            TONOMETER -> if (device.name == NAME_TONOMETER) {
+                bluetoothController.connect(device, selectedDevice.toString())
+            }
+            THERMOMETER -> if (device.name == NAME_THERMOMETER) {
+                bluetoothController.connect(device, selectedDevice.toString())
+            }
+            SCALES -> if (device.name == NAME_SCALE) {
+                bluetoothController.connect(device, selectedDevice.toString())
+            }
         }
     }
 
     override fun onReceiveData(dat: ByteArray?) {
-        when(selectedDevice) {
-            OXYMETER -> dataParser.add(dat!!)
+        when (selectedDevice) {
+            OXYMETER -> dat?.let { data ->
+                dataParser.add(data)
+            }
             TONOMETER -> {
                 when (dat?.size) {
                     7 -> tvParams.text = getString(R.string.pulse, dat[4])
                     8 -> tvParams.text = getString(R.string.blood_pressure, dat[3], dat[4], dat[5])
                 }
             }
-            THERMOMETER -> tvParams.text = getString(R.string.temperature, dataParser.getTemperature(dat!!))
+            THERMOMETER -> {
+                val oneDigitAfterComma = String.format("%.1f", dat?.let { temperature ->
+                    dataParser.getTemperatureInFahrenheit(temperature)
+                })
+                tvParams.text = getString(R.string.temperature, oneDigitAfterComma)
+            }
             SCALES -> tvParams.text = dat?.contentToString()
         }
     }

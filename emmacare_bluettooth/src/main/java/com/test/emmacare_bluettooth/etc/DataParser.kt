@@ -1,18 +1,14 @@
 package com.test.emmacare_bluettooth.etc
 
-import android.util.Log
 import java.util.concurrent.LinkedBlockingQueue
 
-/**
- * Created by ZXX on 2016/1/8.
- */
-class DataParser(private val mPackageReceivedListener: PackageReceivedListener) {
+class DataParser(private val packageReceivedListener: PackageReceivedListener) {
 
     private var TAG = this.javaClass.simpleName
     private val bufferQueue = LinkedBlockingQueue<Int>(256)
     private var mParseRunnable: ParseRunnable? = null
     private var isStop = true
-    private val mOxiParams by lazy { OxiParams() }
+    private val oxiParams by lazy { OxiParams() }
     private lateinit var packageData: IntArray
 
     /**
@@ -20,7 +16,6 @@ class DataParser(private val mPackageReceivedListener: PackageReceivedListener) 
      */
     interface PackageReceivedListener {
         fun onOxiParamsChanged(params: OxiParams?)
-        fun onPlethWaveReceived(amp: Int)
     }
 
     fun start() {
@@ -54,11 +49,10 @@ class DataParser(private val mPackageReceivedListener: PackageReceivedListener) 
                     val spo2 = packageData[4]
                     val pulseRate = packageData[3] or (packageData[2] and 0x40 shl 1)
                     val pi = packageData[0] and 0x0f
-                    if (spo2 != mOxiParams.spo2 || pulseRate != mOxiParams.pulseRate || pi != mOxiParams.pi) {
-                        mOxiParams.update(spo2, pulseRate, pi)
-                        mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                    if (spo2 != oxiParams.spo2 || pulseRate != oxiParams.pulseRate || pi != oxiParams.pi) {
+                        oxiParams.update(spo2, pulseRate, pi)
+                        packageReceivedListener.onOxiParamsChanged(oxiParams)
                     }
-                    mPackageReceivedListener.onPlethWaveReceived(packageData[1])
                 }
             }
         }
@@ -77,7 +71,6 @@ class DataParser(private val mPackageReceivedListener: PackageReceivedListener) 
                 e.printStackTrace()
             }
         }
-        Log.e(TAG, "add: " + dat.contentToString())
     }
 
     /**
@@ -100,11 +93,17 @@ class DataParser(private val mPackageReceivedListener: PackageReceivedListener) 
         return x.toInt() and 0xff
     }
 
-    fun getTemperature(dataArray: ByteArray) : Int {
-        val first = dataArray[8].toInt() and 0xff
-        val second = dataArray[9].toInt() and 0xff
-        val hex = first.times(second)
-        return hex.div(100)
+    /**
+     * Convert dat to temperature in fahrenheit
+     *
+     * @return
+     */
+    fun getTemperatureInFahrenheit(dataArray: ByteArray) : Float {
+        val first = String.format("%02x", dataArray[8])
+        val second = String.format("%02x", dataArray[9])
+        val hex16 = Integer.parseInt("$first$second", 16).toFloat()
+        val celsius = String.format("%.1f", hex16.div(100)).toFloat()
+        return ((celsius * 9) / 5) + 32
     }
 
     /**
