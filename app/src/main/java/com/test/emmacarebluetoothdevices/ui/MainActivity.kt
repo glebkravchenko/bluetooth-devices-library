@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import c.tlgbltcn.library.BluetoothHelper
 import c.tlgbltcn.library.BluetoothHelperListener
+import com.test.emmacare_bluettooth.etc.*
 import com.test.emmacare_bluettooth.etc.Const.NAME_OXYMETER
 import com.test.emmacare_bluettooth.etc.Const.NAME_SCALE
 import com.test.emmacare_bluettooth.etc.Const.NAME_THERMOMETER
@@ -17,17 +18,14 @@ import com.test.emmacare_bluettooth.etc.Const.OXYMETER
 import com.test.emmacare_bluettooth.etc.Const.SCALES
 import com.test.emmacare_bluettooth.etc.Const.THERMOMETER
 import com.test.emmacare_bluettooth.etc.Const.TONOMETER
-import com.test.emmacare_bluettooth.etc.DataParser
 import com.test.emmacare_bluettooth.services.controller.BluetoothController
 import com.test.emmacarebluetoothdevices.R
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), BluetoothHelperListener,
-    BluetoothController.StateListener,
-    DataParser.PackageReceivedListener {
+    BluetoothController.StateListener {
 
     private lateinit var bluetoothHelper: BluetoothHelper
-    private lateinit var dataParser: DataParser
 
     private var itemList = ArrayList<BluetoothDevice>()
     private var bluetoothController = BluetoothController.getDefaultBleController(this)
@@ -52,17 +50,7 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener,
             }
         }
 
-        setupDataParser()
         setupSpinnerAdapter()
-    }
-
-    private fun setupDataParser() {
-        dataParser = DataParser(this)
-        dataParser.start()
-    }
-
-    override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
-        tvParams.text = getString(R.string.spot_and_pulse, params?.spo2, params?.pulseRate)
     }
 
     private fun setupSpinnerAdapter() {
@@ -118,23 +106,25 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener,
 
     override fun onReceiveData(dat: ByteArray?) {
         when (selectedDevice) {
-            OXYMETER -> dat?.let { data ->
-                dataParser.add(data)
+            OXYMETER -> {
+                val spo2 = dat?.getSpO2()
+                val heartRate = dat?.getPulseRate()
+                tvParams.text = getString(R.string.spot_and_pulse, spo2, heartRate)
             }
             TONOMETER -> {
                 when (dat?.size) {
-                    7 -> tvParams.text = getString(R.string.pulse, dat[4])
-                    8 -> tvParams.text = getString(R.string.blood_pressure, dat[3], dat[4], dat[5])
+                    7 -> tvParams.text = getString(R.string.pulse, dat.getPulse(true))
+                    8 -> tvParams.text = getString(R.string.blood_pressure, dat.getSYS(), dat.getDIA(), dat.getPulse(false))
                 }
             }
             THERMOMETER -> {
-                val oneDigitAfterComma = String.format("%.1f", dat?.let { temperature ->
-                    dataParser.getTemperatureInFahrenheit(temperature)
-                })
+                val oneDigitAfterComma = String.format("%.1f", dat?.getTemperatureInFahrenheit())
                 tvParams.text = getString(R.string.temperature, oneDigitAfterComma)
             }
-            SCALES -> tvParams.text = dat?.contentToString()
+            SCALES -> tvParams.text = dat?.getWeightInLb().toString()
         }
+
+
     }
 
     override fun onResume() {
@@ -156,7 +146,6 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener,
     override fun onDestroy() {
         super.onDestroy()
         bluetoothController.unbindService(this)
-        dataParser.stop()
     }
 
     override fun onConnected() {
