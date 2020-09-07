@@ -32,12 +32,13 @@ object ScalesController {
             object : BleNotifyResponse {
                 override fun onResponse(code: Int) {
                     if (code == 0) {
-                        send()
+                        send(WRITE_START_SCALES)
                     }
                 }
 
                 override fun onNotify(service: UUID?, character: UUID?, value: ByteArray?) {
                     if (service!! == Const.SCALES_UUID_SERVICE && character!! == character) {
+                        send(WRITE_END_SCALES)
                         measurementResultListener.onScalesMeasurementFetched(value)
                     }
                 }
@@ -45,7 +46,7 @@ object ScalesController {
         )
     }
 
-    private fun send() {
+    private fun send(byteArray: ByteArray) {
         if (macAddress.isEmpty()) {
             return
         }
@@ -54,7 +55,7 @@ object ScalesController {
             macAddress,
             Const.SCALES_UUID_SERVICE,
             Const.SCALES_UUID_CHARACTER_WRITE,
-            WRITE_START_SCALES
+            byteArray
         )
     }
 
