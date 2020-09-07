@@ -16,9 +16,6 @@ import com.test.emmacare_bluettooth.etc.Const.OXYMETER_UUID_CHARACTER_NOTIFY
 import com.test.emmacare_bluettooth.etc.Const.OXYMETER_UUID_CHARACTER_WRITE
 import com.test.emmacare_bluettooth.etc.Const.OXYMETER_UUID_SERVICE
 import com.test.emmacare_bluettooth.etc.Const.SCALES
-import com.test.emmacare_bluettooth.etc.Const.SCALES_UUID_CHARACTER_NOTIFY
-import com.test.emmacare_bluettooth.etc.Const.SCALES_UUID_CHARACTER_WRITE
-import com.test.emmacare_bluettooth.etc.Const.SCALES_UUID_SERVICE
 import com.test.emmacare_bluettooth.etc.Const.THERMOMETER
 import com.test.emmacare_bluettooth.etc.Const.THERMOMETER_UUID_CHARACTER_NOTIFY
 import com.test.emmacare_bluettooth.etc.Const.THERMOMETER_UUID_CHARACTER_WRITE
@@ -29,8 +26,11 @@ import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_CHARACTER_WRITE
 import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_SERVICE
 import com.test.emmacare_bluettooth.services.BluetoothService
 import com.test.emmacare_bluettooth.services.BluetoothService.LocalBinder
+import com.test.emmacare_bluettooth.services.controller.scales.BluetoothUtils
+import com.test.emmacare_bluettooth.services.controller.scales.ScalesController
 
-class BluetoothController private constructor(private val stateListener: StateListener) {
+class BluetoothController(private val stateListener: StateListener) :
+    ScalesController.MeasurementResultListener {
 
     interface StateListener {
         fun onConnected()
@@ -44,6 +44,11 @@ class BluetoothController private constructor(private val stateListener: StateLi
     private var selectedDeviceGlobal: String? = null
     var isConnected = false
 
+    init {
+        BluetoothUtils.init(context)
+        ScalesController.setListener(this)
+    }
+
     /**
      * connect the bluetooth device
      *
@@ -51,7 +56,11 @@ class BluetoothController private constructor(private val stateListener: StateLi
      */
     fun connect(device: BluetoothDevice, selectedDevice: String) {
         selectedDeviceGlobal = selectedDevice
-        bluetoothService?.connect(device.address)
+        if (selectedDevice != SCALES) {
+            bluetoothService?.connect(device.address)
+        } else {
+            ScalesController.connect(device.address)
+        }
     }
 
     /**
@@ -61,6 +70,11 @@ class BluetoothController private constructor(private val stateListener: StateLi
         bluetoothService?.disconnect()
     }
 
+    /**
+     *
+     * @serviceConnection service which responsible for connection to tonometer, thermometer or oximeter
+     *
+     */
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(
             componentName: ComponentName,
@@ -90,6 +104,12 @@ class BluetoothController private constructor(private val stateListener: StateLi
         context.unbindService(serviceConnection)
     }
 
+    /**
+     *
+     * @gattUpdateReceiver is receiver which says whether device connected or not
+     * and when receives from device some data
+     *
+     */
     private val gattUpdateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
 
         override fun onReceive(context: Context, intent: Intent) {
@@ -123,13 +143,44 @@ class BluetoothController private constructor(private val stateListener: StateLi
                     val data = intent.getByteArrayExtra(EXTRA_DATA)
                     writeCharacteristic?.let { gattCharacteristic ->
                         selectedDeviceGlobal?.let { device ->
-                            bluetoothService?.writeToEndMeasurement(gattCharacteristic, device, data)
+                            bluetoothService?.writeToEndMeasurement(
+                                gattCharacteristic,
+                                device,
+                                data
+                            )
                         }
                     }
                     stateListener.onReceiveData(data)
                 }
             }
         }
+    }
+
+    /**
+     *
+     * @onScalesMeasurementFetched responsible for scales measurement result
+     *
+     */
+    override fun onScalesMeasurementFetched(byteArray: ByteArray?) {
+        stateListener.onReceiveData(byteArray)
+    }
+
+    /**
+     *
+     * @onScalesConnected responsible for state connected for scales
+     *
+     */
+    override fun onScalesConnected() {
+        stateListener.onConnected()
+    }
+
+    /**
+     *
+     * @onScalesDisconnected responsible for state disconnected for scales
+     *
+     */
+    override fun onScalesDisconnected() {
+        stateListener.onDisconnected()
     }
 
     fun initCharacteristic() {
@@ -142,7 +193,6 @@ class BluetoothController private constructor(private val stateListener: StateLi
         services.forEach { service ->
             if (service.uuid == OXYMETER_UUID_SERVICE && selectedDeviceGlobal == OXYMETER
                 || service.uuid == THERMOMETER_UUID_SERVICE && selectedDeviceGlobal == THERMOMETER
-                || service.uuid == SCALES_UUID_SERVICE && selectedDeviceGlobal == SCALES
                 || service.uuid == TONOMETER_UUID_SERVICE && selectedDeviceGlobal == TONOMETER
             ) {
                 dataService = service
@@ -155,13 +205,11 @@ class BluetoothController private constructor(private val stateListener: StateLi
                 for (gattCharacteristic in characteristics) {
                     if (gattCharacteristic.uuid == OXYMETER_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == OXYMETER
                         || gattCharacteristic.uuid == THERMOMETER_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == THERMOMETER
-                        || gattCharacteristic.uuid == SCALES_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == SCALES
                         || gattCharacteristic.uuid == TONOMETER_UUID_CHARACTER_NOTIFY && selectedDeviceGlobal == TONOMETER
                     ) {
                         notifyCharacteristic = gattCharacteristic
                     } else if (gattCharacteristic.uuid == OXYMETER_UUID_CHARACTER_WRITE && selectedDeviceGlobal == OXYMETER
                         || gattCharacteristic.uuid == THERMOMETER_UUID_CHARACTER_WRITE && selectedDeviceGlobal == THERMOMETER
-                        || gattCharacteristic.uuid == SCALES_UUID_CHARACTER_WRITE && selectedDeviceGlobal == SCALES
                         || gattCharacteristic.uuid == TONOMETER_UUID_CHARACTER_WRITE && selectedDeviceGlobal == TONOMETER
                     ) {
                         writeCharacteristic = gattCharacteristic
@@ -182,9 +230,14 @@ class BluetoothController private constructor(private val stateListener: StateLi
         context.unregisterReceiver(gattUpdateReceiver)
     }
 
+    fun onDestroyBLE() {
+        ScalesController.disconnect()
+    }
+
     companion object {
         private val TAG = this.javaClass.name
-        private lateinit var mBluetoothController: BluetoothController
+        private lateinit var bluetoothController: BluetoothController
+        private lateinit var context: Context
 
         /**
          * Get a Controller
@@ -192,9 +245,13 @@ class BluetoothController private constructor(private val stateListener: StateLi
          * @return
          */
         @JvmStatic
-        fun getDefaultBleController(stateListener: StateListener): BluetoothController {
-            mBluetoothController = BluetoothController(stateListener)
-            return mBluetoothController
+        fun getDefaultBleController(
+            context: Context,
+            stateListener: StateListener
+        ): BluetoothController {
+            this.context = context
+            this.bluetoothController = BluetoothController(stateListener)
+            return bluetoothController
         }
 
         private fun makeGattUpdateIntentFilter(): IntentFilter {
