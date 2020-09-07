@@ -25,17 +25,19 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity(), BluetoothHelperListener,
     BluetoothController.StateListener {
 
+    private lateinit var bluetoothController: BluetoothController
     private lateinit var bluetoothHelper: BluetoothHelper
 
     private var itemList = ArrayList<BluetoothDevice>()
-    private var bluetoothController = BluetoothController.getDefaultBleController(this)
     private var selectedDevice: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        bluetoothController = BluetoothController.getDefaultBleController(baseContext, this)
         bluetoothController.bindService(this)
+
         bluetoothHelper = BluetoothHelper(this@MainActivity, this@MainActivity)
             .setPermissionRequired(true)
             .create()
