@@ -1,4 +1,4 @@
-package com.test.emmacare_bluettooth.services.scales
+package com.test.emmacare_bluettooth.services.controller.scales
 
 import android.text.TextUtils
 import com.inuker.bluetooth.library.Constants
@@ -8,26 +8,20 @@ import com.inuker.bluetooth.library.connect.response.BleConnectResponse
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.model.BleGattProfile
 import com.test.emmacare_bluettooth.etc.Const
-import com.test.emmacare_bluettooth.services.scales.UnitConfig.UNIT_LB
 import java.util.*
 
 object ScalesController {
 
+    private val WRITE_START_SCALES =
+        byteArrayOfInts(0xFD, 0x37, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCA)
+    private val WRITE_END_SCALES =
+        byteArrayOfInts(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x00, 0x00)
+
     private lateinit var measurementResultListener: MeasurementResultListener
-    private var currentAppUnit = UNIT_LB
     private var macAddress = ""
 
     fun setListener(measurementMeasurementResult: MeasurementResultListener) {
         measurementResultListener = measurementMeasurementResult
-    }
-
-    private fun setUnit(unit: Int) {
-        val command = BodyFatUtils.assemblyData(
-            Units.convert(if (-1 == unit) UnitConfig.getUnit() else unit),
-            "01"
-        )
-        currentAppUnit = unit
-        send(command)
     }
 
     private fun notifyBluetooth() {
@@ -38,7 +32,7 @@ object ScalesController {
             object : BleNotifyResponse {
                 override fun onResponse(code: Int) {
                     if (code == 0) {
-                        setUnit(currentAppUnit)
+                        send()
                     }
                 }
 
@@ -51,7 +45,7 @@ object ScalesController {
         )
     }
 
-    private fun send(cmd: String) {
+    private fun send() {
         if (macAddress.isEmpty()) {
             return
         }
@@ -60,7 +54,7 @@ object ScalesController {
             macAddress,
             Const.SCALES_UUID_SERVICE,
             Const.SCALES_UUID_CHARACTER_WRITE,
-            cmd
+            WRITE_START_SCALES
         )
     }
 
@@ -78,7 +72,10 @@ object ScalesController {
         BluetoothUtils.client.connect(macAddress, options, object : BleConnectResponse {
             override fun onResponse(code: Int, data: BleGattProfile?) {
                 if (code == Constants.REQUEST_SUCCESS) {
-                    BluetoothUtils.client.registerConnectStatusListener(macAddress, bleConnectStatusListener)
+                    BluetoothUtils.client.registerConnectStatusListener(
+                        macAddress,
+                        bleConnectStatusListener
+                    )
 
                     if (data == null) {
                         return
@@ -113,8 +110,10 @@ object ScalesController {
         }
     }
 
+    private fun byteArrayOfInts(vararg ints: Int) =
+        ByteArray(ints.size) { pos -> ints[pos].toByte() }
+
     fun disconnect() {
-        currentAppUnit = 1
         BluetoothUtils.client.disconnect(macAddress)
     }
 

@@ -26,8 +26,8 @@ import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_CHARACTER_WRITE
 import com.test.emmacare_bluettooth.etc.Const.TONOMETER_UUID_SERVICE
 import com.test.emmacare_bluettooth.services.BluetoothService
 import com.test.emmacare_bluettooth.services.BluetoothService.LocalBinder
-import com.test.emmacare_bluettooth.services.scales.BluetoothUtils
-import com.test.emmacare_bluettooth.services.scales.ScalesController
+import com.test.emmacare_bluettooth.services.controller.scales.BluetoothUtils
+import com.test.emmacare_bluettooth.services.controller.scales.ScalesController
 
 class BluetoothController(private val stateListener: StateListener) :
     ScalesController.MeasurementResultListener {
