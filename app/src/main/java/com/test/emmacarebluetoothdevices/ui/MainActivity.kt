@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import c.tlgbltcn.library.BluetoothHelper
 import c.tlgbltcn.library.BluetoothHelperListener
+import com.test.emmacare_bluettooth.BluetoothController
 import com.test.emmacare_bluettooth.etc.*
 import com.test.emmacare_bluettooth.etc.Const.NAME_OXYMETER
 import com.test.emmacare_bluettooth.etc.Const.NAME_SCALE
@@ -18,7 +19,6 @@ import com.test.emmacare_bluettooth.etc.Const.OXYMETER
 import com.test.emmacare_bluettooth.etc.Const.SCALES
 import com.test.emmacare_bluettooth.etc.Const.THERMOMETER
 import com.test.emmacare_bluettooth.etc.Const.TONOMETER
-import com.test.emmacare_bluettooth.services.controller.BluetoothController
 import com.test.emmacarebluetoothdevices.R
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -36,7 +36,6 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener,
         setContentView(R.layout.activity_main)
 
         bluetoothController = BluetoothController.getDefaultBleController(baseContext, this)
-        bluetoothController.bindService(this)
 
         bluetoothHelper = BluetoothHelper(this@MainActivity, this@MainActivity)
             .setPermissionRequired(true)
@@ -63,7 +62,7 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener,
         devicesList.add(SCALES)
 
         val userAdapter: ArrayAdapter<*> =
-            ArrayAdapter<String>(this, R.layout.item_spinner, devicesList)
+            ArrayAdapter(this, R.layout.item_spinner, devicesList)
         spinner.adapter = userAdapter
         spinner.onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(
@@ -132,22 +131,11 @@ class MainActivity : AppCompatActivity(), BluetoothHelperListener,
     override fun onResume() {
         super.onResume()
         bluetoothHelper.registerBluetoothStateChanged()
-        bluetoothController.registerBtReceiver(this)
     }
 
     override fun onStop() {
         super.onStop()
         bluetoothHelper.unregisterBluetoothStateChanged()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        bluetoothController.unregisterBtReceiver(this)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        bluetoothController.unbindService(this)
     }
 
     override fun onConnected() {

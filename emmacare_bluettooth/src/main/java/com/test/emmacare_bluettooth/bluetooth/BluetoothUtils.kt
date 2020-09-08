@@ -1,4 +1,4 @@
-package com.test.emmacare_bluettooth.services.controller.scales
+package com.test.emmacare_bluettooth.bluetooth
 import android.content.Context
 import android.text.TextUtils
 import android.util.Log
